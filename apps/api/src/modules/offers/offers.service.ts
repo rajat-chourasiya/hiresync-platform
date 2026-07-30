@@ -1,0 +1,1 @@
+// offers.service.ts placeholder

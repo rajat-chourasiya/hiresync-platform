@@ -1,0 +1,12 @@
+{
+  "name": "@hirespark/piston-runner",
+  "version": "0.0.1",
+  "description": "Isolated Piston code execution runner — separate from the NestJS API process",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "echo Piston Runner not implemented yet",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
