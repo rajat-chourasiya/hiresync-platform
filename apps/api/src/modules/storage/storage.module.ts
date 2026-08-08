@@ -6,6 +6,6 @@ import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 @Module({
   controllers: [StorageController],
   providers: [CloudinaryProvider, StorageService],
-  exports: [StorageService],
+  exports: [CloudinaryProvider, StorageService],
 })
 export class StorageModule {}
