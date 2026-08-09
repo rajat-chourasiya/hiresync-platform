@@ -4,15 +4,18 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { StorageModule } from './modules/storage/storage.module';
-import { CloudinaryProvider } from './modules/storage/cloudinary/cloudinary.provider';
 import { EmailModule } from './modules/email/email.module';
+import { RedisModule } from './modules/cache/redis.module';
+import { VideoModule } from './modules/video/video.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     StorageModule,
-    EmailModule
+    EmailModule,
+    RedisModule,
+    VideoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
