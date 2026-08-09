@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/cache/redis.module';
+import { VideoModule } from './modules/video/video.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { RedisModule } from './modules/cache/redis.module';
     DatabaseModule,
     StorageModule,
     EmailModule,
-    RedisModule
+    RedisModule,
+    VideoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

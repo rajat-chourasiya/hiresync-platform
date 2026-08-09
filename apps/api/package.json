@@ -26,6 +26,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.19.3",
+    "@stream-io/node-sdk": "^0.7.63",
     "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "ioredis": "^6.0.0",

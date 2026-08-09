@@ -5,6 +5,7 @@ import { v2 as CloudinaryType } from 'cloudinary';
 import { CLOUDINARY } from './modules/storage/cloudinary/cloudinary.provider';
 import Redis from 'ioredis/built/Redis';
 import { REDIS } from './modules/cache/redis.provider';
+import { VideoService } from './modules/video/video.service';
 
 @Controller()
 export class AppController {
@@ -13,6 +14,7 @@ export class AppController {
     private readonly prisma: PrismaService,
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(CLOUDINARY) private readonly cloudinary: typeof CloudinaryType,
+    private readonly videoService: VideoService
   ) { }
 
   @Get()
@@ -45,5 +47,11 @@ export class AppController {
 async checkRedis() {
   const pong = await this.redis.ping();
   return { status: pong === 'PONG' ? 'ok' : 'error' };
+}
+
+@Get('health/stream')
+checkStream() {
+  const token = this.videoService.generateUserToken('test-user-123');
+  return { status: 'ok', token };
 }
 }
