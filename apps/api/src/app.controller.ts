@@ -1,13 +1,16 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './database/prisma.service';
+import { v2 as CloudinaryType } from 'cloudinary';
+import { CLOUDINARY } from './modules/storage/cloudinary/cloudinary.provider';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly prisma: PrismaService,
-  ) {}
+    @Inject(CLOUDINARY) private readonly cloudinary: typeof CloudinaryType,
+  ) { }
 
   @Get()
   getHello(): string {
@@ -21,6 +24,17 @@ export class AppController {
       return { status: 'OK', database: 'Connected' };
     } catch (err) {
       return { status: 'ERROR', database: 'Disconnected' };
+    }
+  }
+
+  @Get('health/cloudinary')
+  async checkCloudinary() {
+    try {
+      const result = await this.cloudinary.api.ping();
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return { status: 'ERROR', message };
     }
   }
 }
