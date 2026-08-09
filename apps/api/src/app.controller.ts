@@ -3,12 +3,15 @@ import { AppService } from './app.service';
 import { PrismaService } from './database/prisma.service';
 import { v2 as CloudinaryType } from 'cloudinary';
 import { CLOUDINARY } from './modules/storage/cloudinary/cloudinary.provider';
+import Redis from 'ioredis/built/Redis';
+import { REDIS } from './modules/cache/redis.provider';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly prisma: PrismaService,
+    @Inject(REDIS) private readonly redis: Redis,
     @Inject(CLOUDINARY) private readonly cloudinary: typeof CloudinaryType,
   ) { }
 
@@ -37,4 +40,10 @@ export class AppController {
       return { status: 'ERROR', message };
     }
   }
+
+  @Get('health/redis')
+async checkRedis() {
+  const pong = await this.redis.ping();
+  return { status: pong === 'PONG' ? 'ok' : 'error' };
+}
 }
