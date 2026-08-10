@@ -1,12 +1,18 @@
 {
-  "name": "@hirespark/piston-runner",
-  "version": "0.0.1",
-  "description": "Isolated Piston code execution runner — separate from the NestJS API process",
-  "main": "src/main.js",
+  "name": "piston-runner",
+  "version": "1.0.0",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "echo Piston Runner not implemented yet",
-    "start": "node dist/main.js"
+    "dev": "ts-node-dev src/main.ts",
+    "build": "tsc"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "axios": "^1.19.0",
+    "express": "^4.22.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
 }
