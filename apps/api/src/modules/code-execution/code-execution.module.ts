@@ -1,1 +1,10 @@
-// code-execution.module.ts placeholder
+import { Module } from '@nestjs/common';
+import { CodeExecutionController } from './code-execution.controller';
+import { CodeExecutionService } from './code-execution.service';
+
+@Module({
+  controllers: [CodeExecutionController],
+  providers: [CodeExecutionService],
+  exports: [CodeExecutionService],
+})
+export class CodeExecutionModule {}
