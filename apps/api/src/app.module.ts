@@ -7,6 +7,7 @@ import { StorageModule } from './modules/storage/storage.module';
 import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/cache/redis.module';
 import { VideoModule } from './modules/video/video.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { VideoModule } from './modules/video/video.module';
     EmailModule,
     RedisModule,
     VideoModule,
+    AiModule
   ],
   controllers: [AppController],
   providers: [AppService],
