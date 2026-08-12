@@ -3,9 +3,11 @@ import { AppService } from './app.service';
 import { PrismaService } from './database/prisma.service';
 import { v2 as CloudinaryType } from 'cloudinary';
 import { CLOUDINARY } from './modules/storage/cloudinary/cloudinary.provider';
-import Redis from 'ioredis/built/Redis';
+import Redis from 'ioredis';
 import { REDIS } from './modules/cache/redis.provider';
 import { VideoService } from './modules/video/video.service';
+import { GEMINI } from './modules/ai/providers/gemini.provider';
+import { GROQ } from './modules/ai/providers/groq.provider';
 
 @Controller()
 export class AppController {
@@ -14,7 +16,9 @@ export class AppController {
     private readonly prisma: PrismaService,
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(CLOUDINARY) private readonly cloudinary: typeof CloudinaryType,
-    private readonly videoService: VideoService
+    private readonly videoService: VideoService,
+    @Inject(GEMINI) private readonly gemini: any,
+    @Inject(GROQ) private readonly groqClient: any
   ) { }
 
   @Get()
@@ -53,5 +57,33 @@ async checkRedis() {
 checkStream() {
   const token = this.videoService.generateUserToken('test-user-123');
   return { status: 'ok', token };
+}
+
+@Get('health/gemini')
+async checkGemini() {
+  try {
+    const model = this.gemini.getGenerativeModel({
+      model: process.env.GEMINI_MODEL as string,
+    });
+    const result = await model.generateContent('Say "connected" only');
+    return { status: 'ok', response: result.response.text() };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { status: 'ERROR', message };
+  }
+}
+
+@Get('health/groq')
+async checkGroq() {
+  try {
+    const result = await this.groqClient.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: 'Say "connected" only' }],
+    });
+    return { status: 'ok', response: result.choices[0].message.content };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { status: 'ERROR', message };
+  }
 }
 }
