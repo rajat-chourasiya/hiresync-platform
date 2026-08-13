@@ -8,6 +8,8 @@ import { EmailModule } from './modules/email/email.module';
 import { RedisModule } from './modules/cache/redis.module';
 import { VideoModule } from './modules/video/video.module';
 import { AiModule } from './modules/ai/ai.module';
+import { BillingModule } from './modules/billing/billing.module';
+
 
 @Module({
   imports: [
@@ -17,7 +19,8 @@ import { AiModule } from './modules/ai/ai.module';
     EmailModule,
     RedisModule,
     VideoModule,
-    AiModule
+    AiModule,
+    BillingModule, 
   ],
   controllers: [AppController],
   providers: [AppService],
