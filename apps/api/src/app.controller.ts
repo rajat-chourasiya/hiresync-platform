@@ -18,7 +18,8 @@ export class AppController {
     @Inject(CLOUDINARY) private readonly cloudinary: typeof CloudinaryType,
     private readonly videoService: VideoService,
     @Inject(GEMINI) private readonly gemini: any,
-    @Inject(GROQ) private readonly groqClient: any
+    @Inject(GROQ) private readonly groqClient: any,
+    @Inject('RAZORPAY') private readonly razorpay: any
   ) { }
 
   @Get()
@@ -81,6 +82,17 @@ async checkGroq() {
       messages: [{ role: 'user', content: 'Say "connected" only' }],
     });
     return { status: 'ok', response: result.choices[0].message.content };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { status: 'ERROR', message };
+  }
+}
+
+@Get('health/razorpay')
+async checkRazorpay() {
+  try {
+    const orders = await this.razorpay.orders.all({ count: 1 });
+    return { status: 'ok', ordersFetched: orders.items.length };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return { status: 'ERROR', message };
