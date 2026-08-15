@@ -5,7 +5,7 @@ services:
     restart: always
     privileged: true
     ports:
-      - "2000:2000"
+      - '2000:2000'
     volumes:
       - piston_data:/piston
     networks:
@@ -18,7 +18,7 @@ services:
     container_name: piston-runner
     restart: always
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       - PISTON_INTERNAL_URL=http://api:2000
     depends_on:
