@@ -3,12 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { StorageModule } from './modules/storage/storage.module';
-import { EmailModule } from './modules/email/email.module';
-import { RedisModule } from './modules/cache/redis.module';
-import { VideoModule } from './modules/video/video.module';
-import { AiModule } from './modules/ai/ai.module';
-import { BillingModule } from './modules/billing/billing.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({

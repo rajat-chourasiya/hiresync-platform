@@ -4,9 +4,24 @@ import { STREAM_CLIENT } from './stream-provider/stream.provider';
 
 @Injectable()
 export class VideoService {
-  constructor(@Inject(STREAM_CLIENT) private client: StreamClient) {}
+  constructor(
+    @Inject(STREAM_CLIENT)
+    private readonly client: StreamClient,
+  ) {}
 
-  generateUserToken(userId: string) {
-    return this.client.generateUserToken({ user_id: userId });
+  generateUserToken(userId: string): string {
+    return this.client.generateUserToken({
+      user_id: userId,
+    });
+  }
+
+  // Health check
+  async checkConnection(): Promise<void> {
+    await this.client.upsertUsers([
+      {
+        id: 'health-check-user',
+        name: 'Health Check',
+      },
+    ]);
   }
 }

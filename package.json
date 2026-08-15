@@ -10,9 +10,11 @@
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
     "dev:piston": "pnpm --filter @hirespark/piston-runner start:dev",
-    "prepare": "husky"
+    "prepare": "husky",
+    "health": "node scripts/health-check/health-check.mjs"
   },
   "devDependencies": {
+    "dotenv": "^17.4.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
