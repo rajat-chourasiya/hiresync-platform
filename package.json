@@ -9,12 +9,23 @@
     "test": "turbo run test",
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
-    "dev:piston": "pnpm --filter @hirespark/piston-runner start:dev"
+    "dev:piston": "pnpm --filter @hirespark/piston-runner start:dev",
+    "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
     "turbo": "^2.10.5"
+  },
+  "lint-staged": {
+    "apps/api/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

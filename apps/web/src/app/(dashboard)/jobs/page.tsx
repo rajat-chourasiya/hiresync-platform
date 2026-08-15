@@ -1,2 +1,4 @@
 // (dashboard)/jobs page
-export default function Page() { return <div>(dashboard)/jobs</div>; }
+export default function Page() {
+  return <div>(dashboard)/jobs</div>;
+}

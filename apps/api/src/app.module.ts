@@ -9,18 +9,13 @@ import { RedisModule } from './modules/cache/redis.module';
 import { VideoModule } from './modules/video/video.module';
 import { AiModule } from './modules/ai/ai.module';
 import { BillingModule } from './modules/billing/billing.module';
-
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
-    StorageModule,
-    EmailModule,
-    RedisModule,
-    VideoModule,
-    AiModule,
-    BillingModule, 
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

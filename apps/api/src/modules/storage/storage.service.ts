@@ -28,7 +28,9 @@ export class StorageService {
           resource_type: 'auto', // auto-detects image/video/raw(pdf)
         },
         (error, result) => {
-          if (error) return reject(error);
+          if (error) {
+            return reject(new Error(error.message || JSON.stringify(error)));
+          }
           resolve(result as UploadApiResponse);
         },
       );

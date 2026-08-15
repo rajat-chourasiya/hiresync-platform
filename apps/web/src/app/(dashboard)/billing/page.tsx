@@ -1,2 +1,4 @@
 // (dashboard)/billing page
-export default function Page() { return <div>(dashboard)/billing</div>; }
+export default function Page() {
+  return <div>(dashboard)/billing</div>;
+}
