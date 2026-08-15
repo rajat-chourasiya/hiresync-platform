@@ -4,16 +4,10 @@ import { RunCodeDto } from './dto/run-code.dto';
 
 @Controller('code-execution')
 export class CodeExecutionController {
-  constructor(
-    private readonly service: CodeExecutionService,
-  ) {}
+  constructor(private readonly service: CodeExecutionService) {}
 
   @Post('run')
   run(@Body() body: RunCodeDto) {
-    return this.service.run(
-      body.language,
-      body.version,
-      body.code,
-    );
+    return this.service.run(body.language, body.version, body.code);
   }
 }

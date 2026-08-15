@@ -9,11 +9,7 @@ export class EmailService {
     private readonly resend: Resend,
   ) {}
 
-  async sendEmail(
-    to: string,
-    subject: string,
-    html: string,
-  ) {
+  async sendEmail(to: string, subject: string, html: string) {
     return this.resend.emails.send({
       from: process.env.EMAIL_FROM as string,
       to,

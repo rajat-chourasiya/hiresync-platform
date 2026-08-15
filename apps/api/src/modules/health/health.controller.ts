@@ -39,7 +39,6 @@ export class HealthController {
 
     @Inject(RAZORPAY)
     private readonly razorpay: Razorpay,
-
   ) {}
 
   @Get()
@@ -65,21 +64,21 @@ export class HealthController {
     }
   }
 
-@Get('email')
-async checkEmail(): Promise<HealthResponse> {
-  try {
-    await this.emailService.verifyConnection();
+  @Get('email')
+  async checkEmail(): Promise<HealthResponse> {
+    try {
+      await this.emailService.verifyConnection();
 
-    return {
-      status: 'ok',
-    };
-  } catch (err) {
-    return {
-      status: 'ERROR',
-      message: err instanceof Error ? err.message : 'Unknown error',
-    };
+      return {
+        status: 'ok',
+      };
+    } catch (err) {
+      return {
+        status: 'ERROR',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      };
+    }
   }
-}
 
   @Get('cloudinary')
   async checkCloudinary(): Promise<HealthResponse> {
@@ -177,9 +176,7 @@ async checkEmail(): Promise<HealthResponse> {
   }
 
   @Get('razorpay')
-  async checkRazorpay(): Promise<
-    HealthResponse & { ordersFetched?: number }
-  > {
+  async checkRazorpay(): Promise<HealthResponse & { ordersFetched?: number }> {
     try {
       const orders = await this.razorpay.orders.all({
         count: 1,

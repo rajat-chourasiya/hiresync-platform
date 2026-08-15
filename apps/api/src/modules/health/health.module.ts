@@ -9,7 +9,6 @@ import { StorageModule } from '../storage/storage.module';
 import { RedisModule } from '../cache/redis.module';
 import { EmailModule } from '../email/email.module';
 
-
 @Module({
   imports: [
     DatabaseModule,
@@ -18,7 +17,7 @@ import { EmailModule } from '../email/email.module';
     VideoModule,
     AiModule,
     BillingModule,
-    EmailModule
+    EmailModule,
   ],
   controllers: [HealthController],
 })
