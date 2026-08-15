@@ -1,2 +1,4 @@
 // apply/[jobSlug] page
-export default function Page() { return <div>apply/[jobSlug]</div>; }
+export default function Page() {
+  return <div>apply/[jobSlug]</div>;
+}

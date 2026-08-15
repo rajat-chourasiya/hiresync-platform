@@ -1,2 +1,4 @@
 // (auth)/login page
-export default function Page() { return <div>(auth)/login</div>; }
+export default function Page() {
+  return <div>(auth)/login</div>;
+}

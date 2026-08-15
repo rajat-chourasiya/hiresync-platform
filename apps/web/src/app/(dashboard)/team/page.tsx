@@ -1,2 +1,4 @@
 // (dashboard)/team page
-export default function Page() { return <div>(dashboard)/team</div>; }
+export default function Page() {
+  return <div>(dashboard)/team</div>;
+}
