@@ -7,10 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==========================================
-// GROUP 1: Identity & Tenant
-// ==========================================
-
 model Organization {
   id                 String   @id @default(uuid())
   name               String
@@ -19,50 +15,47 @@ model Organization {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   dataRegion         String?
-  users User[]
-  jobs  Job[]
+  jobs               Job[]
+  users              User[]
 
   @@map("organizations")
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  orgId               String
-  email               String    @unique
-  passwordHash        String
-  role                String
-  tokenVersion        Int       @default(0)
-  refreshTokenHash    String?
+  id                    String       @id @default(uuid())
+  orgId                 String
+  email                 String       @unique
+  passwordHash          String
+  role                  String
+  tokenVersion          Int          @default(0)
+  refreshTokenHash      String?
   refreshTokenExpiresAt DateTime?
-  lastLoginAt         DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  organization Organization @relation(fields: [orgId], references: [id])
-  roles        UserRole[]
+  lastLoginAt           DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  roles                 UserRole[]
+  organization          Organization @relation(fields: [orgId], references: [id])
 
   @@index([orgId])
   @@map("users")
 }
 
 model Role {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  createdAt DateTime @default(now())
-
-  users       UserRole[]
+  id          String           @id @default(uuid())
+  name        String           @unique
+  createdAt   DateTime         @default(now())
   permissions RolePermission[]
+  users       UserRole[]
 
   @@map("roles")
 }
 
 model Permission {
-  id       String @id @default(uuid())
-  name     String @unique
+  id       String           @id @default(uuid())
+  name     String           @unique
   resource String
   action   String
-
-  roles RolePermission[]
+  roles    RolePermission[]
 
   @@map("permissions")
 }
@@ -70,9 +63,8 @@ model Permission {
 model UserRole {
   userId String
   roleId String
-
-  user User @relation(fields: [userId], references: [id])
-  role Role @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@id([userId, roleId])
   @@map("user_roles")
@@ -81,31 +73,25 @@ model UserRole {
 model RolePermission {
   roleId       String
   permissionId String
-
-  role       Role       @relation(fields: [roleId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
 }
 
-// ==========================================
-// GROUP 2: Jobs & Candidates
-// ==========================================
-
 model Job {
-  id        String   @id @default(uuid())
-  orgId     String
-  title     String
-  slug      String
-  skills    String[]
-  status    String   @default("draft")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [orgId], references: [id])
+  id           String        @id @default(uuid())
+  orgId        String
+  title        String
+  slug         String
+  skills       String[]
+  status       String        @default("draft")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  stages       String[]      @default([])
   applications Application[]
-  stages String[] @default([])
+  organization Organization  @relation(fields: [orgId], references: [id])
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -113,15 +99,14 @@ model Job {
 }
 
 model CandidateProfile {
-  id        String   @id @default(uuid())
-  orgId     String
-  name      String
-  email     String
-  phone     String?
-  skills    String[]
-  resumeUrl String?
-  createdAt DateTime @default(now())
-
+  id           String        @id @default(uuid())
+  orgId        String
+  name         String
+  email        String
+  phone        String?
+  skills       String[]
+  resumeUrl    String?
+  createdAt    DateTime      @default(now())
   applications Application[]
 
   @@index([email])
@@ -130,18 +115,16 @@ model CandidateProfile {
 }
 
 model Application {
-  id               String   @id @default(uuid())
-  orgId            String
+  id               String           @id @default(uuid())
   jobId            String
   candidateId      String
-  status           String   @default("applied")
-  aiAnalysisStatus String   @default("queued")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-
-  job       Job              @relation(fields: [jobId], references: [id])
-  candidate CandidateProfile @relation(fields: [candidateId], references: [id])
+  status           String           @default("applied")
+  aiAnalysisStatus String           @default("queued")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  orgId            String
+  candidate        CandidateProfile @relation(fields: [candidateId], references: [id])
+  job              Job              @relation(fields: [jobId], references: [id])
 
   @@unique([jobId, candidateId])
   @@map("applications")
@@ -161,26 +144,20 @@ model OtpVerification {
   @@map("otp_verifications")
 }
 
-
-// ==========================================
-// GROUP 3: Interview & Feedback
-// ==========================================
-
 model Interview {
-  id             String   @id @default(uuid())
-  orgId          String
+  id             String                 @id @default(uuid())
   jobId          String
   candidateId    String
   interviewerIds String[]
   scheduledStart DateTime
   scheduledEnd   DateTime
-  roomId         String   @unique
-  status         String   @default("scheduled")
-  createdAt      DateTime @default(now())
-
-  room         InterviewRoom?
-  accessTokens InterviewAccessToken[]
-  feedbacks    Feedback[]
+  roomId         String                 @unique
+  status         String                 @default("scheduled")
+  createdAt      DateTime               @default(now())
+  orgId          String
+  feedbacks      Feedback[]
+  accessTokens   InterviewAccessToken[]
+  room           InterviewRoom?
 
   @@index([orgId])
   @@index([jobId])
@@ -189,14 +166,13 @@ model Interview {
 }
 
 model InterviewRoom {
-  id             String   @id @default(uuid())
-  interviewId    String   @unique
+  id             String    @id @default(uuid())
+  interviewId    String    @unique
   participants   String[]
   activeTypistId String?
   recordingUrl   String?
-  createdAt      DateTime @default(now())
-
-  interview Interview @relation(fields: [interviewId], references: [id])
+  createdAt      DateTime  @default(now())
+  interview      Interview @relation(fields: [interviewId], references: [id])
 
   @@map("interview_rooms")
 }
@@ -209,8 +185,7 @@ model InterviewAccessToken {
   expiresAt   DateTime
   revokedAt   DateTime?
   createdAt   DateTime  @default(now())
-
-  interview Interview @relation(fields: [interviewId], references: [id])
+  interview   Interview @relation(fields: [interviewId], references: [id])
 
   @@index([interviewId])
   @@map("interview_access_tokens")
@@ -220,7 +195,7 @@ model ChatMessage {
   id         String   @id @default(uuid())
   roomId     String
   senderId   String
-  senderType String   
+  senderType String
   message    String
   createdAt  DateTime @default(now())
 
@@ -242,41 +217,36 @@ model CodeSnapshot {
 }
 
 model Feedback {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   interviewId    String
   interviewerId  String
   scores         Json
   recommendation String?
-  submittedAt    DateTime @default(now())
-
-  interview Interview @relation(fields: [interviewId], references: [id])
+  submittedAt    DateTime  @default(now())
+  interview      Interview @relation(fields: [interviewId], references: [id])
 
   @@index([interviewId])
   @@map("feedbacks")
 }
 
-// ==========================================
-// GROUP 4: AI
-// ==========================================
-
 model AiResumeAnalysis {
-  id             String   @id @default(uuid())
-  orgId          String
-  jobId          String
-  candidateId    String
-  applicationId  String   @unique
-  modelProvider  String
-  modelName      String
-  promptVersion  String
-  score          Decimal? @db.Decimal(5, 2)
-  confidence     Decimal? @db.Decimal(5, 2)
-  matchedSkills  String[]
-  missingSkills  String[]
-  strengths      String[]
-  risks          String[]
-  reviewStatus   String   @default("pending")
-  rawResponse    Json?
-  createdAt      DateTime @default(now())
+  id            String   @id @default(uuid())
+  orgId         String
+  jobId         String
+  candidateId   String
+  applicationId String   @unique
+  modelProvider String
+  modelName     String
+  promptVersion String
+  score         Decimal? @db.Decimal(5, 2)
+  confidence    Decimal? @db.Decimal(5, 2)
+  matchedSkills String[]
+  missingSkills String[]
+  strengths     String[]
+  risks         String[]
+  reviewStatus  String   @default("pending")
+  rawResponse   Json?
+  createdAt     DateTime @default(now())
 
   @@index([orgId])
   @@index([applicationId])
@@ -284,15 +254,15 @@ model AiResumeAnalysis {
 }
 
 model AiGeneratedQuestionSet {
-  id        String   @id @default(uuid())
-  orgId     String
-  jobId     String
-  role      String?
+  id         String   @id @default(uuid())
+  orgId      String
+  jobId      String
+  role       String?
   difficulty String?
-  roundType String?
-  status    String   @default("draft")
-  questions Json
-  createdAt DateTime @default(now())
+  roundType  String?
+  status     String   @default("draft")
+  questions  Json
+  createdAt  DateTime @default(now())
 
   @@index([orgId])
   @@index([jobId])
@@ -300,16 +270,16 @@ model AiGeneratedQuestionSet {
 }
 
 model AiFeedbackSummary {
-  id                      String   @id @default(uuid())
-  orgId                   String
-  interviewId             String
-  candidateId             String
-  summary                 String
-  strengths               String[]
-  weaknesses              String[]
-  riskNotes               String[]
+  id                       String   @id @default(uuid())
+  orgId                    String
+  interviewId              String
+  candidateId              String
+  summary                  String
+  strengths                String[]
+  weaknesses               String[]
+  riskNotes                String[]
   finalRecommendationDraft String?
-  createdAt               DateTime @default(now())
+  createdAt                DateTime @default(now())
 
   @@index([interviewId])
   @@map("ai_feedback_summaries")
@@ -333,44 +303,36 @@ model AiUsageLog {
   @@map("ai_usage_logs")
 }
 
-// ==========================================
-// GROUP 5: Billing
-// ==========================================
-
 model Payment {
-  id              String   @id @default(uuid())
-  organizationId  String
-  planId          String
-  orderId         String   @unique
-  paymentId       String?
-  webhookEventId  String?  @unique
-  amount          Decimal  @db.Decimal(10, 2)
-  currency        String   @default("INR")
-  status          String   @default("created")
-  pdfUrl          String?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  organizationId String
+  planId         String
+  orderId        String   @unique
+  paymentId      String?
+  webhookEventId String?  @unique
+  amount         Decimal  @db.Decimal(10, 2)
+  currency       String   @default("INR")
+  status         String   @default("created")
+  pdfUrl         String?
+  createdAt      DateTime @default(now())
 
   @@index([organizationId])
   @@map("payments")
 }
 
 model Subscription {
-  id             String    @id @default(uuid())
-  organizationId String    @unique
-  planId         String
-  status         String    @default("trial")
-  trialEndsAt    DateTime?
+  id               String    @id @default(uuid())
+  organizationId   String    @unique
+  planId           String
+  status           String    @default("trial")
+  trialEndsAt      DateTime?
   currentPeriodEnd DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([organizationId])
   @@map("subscriptions")
 }
-
-// ==========================================
-// GROUP 6: Audit
-// ==========================================
 
 model AuditLog {
   id           String   @id @default(uuid())

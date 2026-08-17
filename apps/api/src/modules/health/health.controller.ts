@@ -19,6 +19,7 @@ import { RAZORPAY } from '../billing/razorpay/razorpay.provider';
 
 import { EmailService } from '../email/email.service';
 import { GeminiService } from '../ai/providers/gemini.service';
+import { getCurrentOrgId } from 'src/common/context/tenant-context';
 
 interface HealthResponse {
   status: 'ok' | 'ERROR';
@@ -248,4 +249,10 @@ export class HealthController {
       };
     }
   }
+
+  @Get('health/tenant-context')
+checkTenantContext() {
+  const orgId = getCurrentOrgId();
+  return { orgId: orgId || 'NOT SET — middleware not working' };
+}
 }

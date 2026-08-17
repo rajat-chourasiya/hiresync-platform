@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { tenantExtension } from './tenant.extension';
 
 @Injectable()
 export class PrismaService
@@ -20,5 +21,9 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+  }
+
+  withTenant() {
+    return this.$extends(tenantExtension);
   }
 }
