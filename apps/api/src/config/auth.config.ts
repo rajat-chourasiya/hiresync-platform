@@ -1,9 +1,15 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('auth', () => ({
-  jwtSecret: process.env.JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
-  refreshSecret: process.env.REFRESH_SECRET,
-  refreshExpiresIn: process.env.REFRESH_EXPIRES_IN ?? '7d',
-  hmacSecret: process.env.HMAC_SECRET,
+  jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
+  jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
+
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+
+  cookieSecret: process.env.COOKIE_SECRET,
+
+  interviewTokenSecret: process.env.INTERVIEW_TOKEN_SECRET,
+  interviewTokenExpiryHours:
+    Number(process.env.INTERVIEW_TOKEN_EXPIRY_HOURS) || 48,
 }));
