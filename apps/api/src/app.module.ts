@@ -5,12 +5,14 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     HealthModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
