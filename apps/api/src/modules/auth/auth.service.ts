@@ -181,4 +181,40 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  async refresh(oldRefreshToken: string) {
+  let payload: { sub: string; tokenVersion: number };
+  try {
+    payload = jwt.verify(oldRefreshToken, process.env.JWT_REFRESH_SECRET as string) as typeof payload;
+  } catch {
+    throw new UnauthorizedException('Invalid refresh token');
+  }
+
+  const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user) throw new UnauthorizedException('User not found');
+
+  const incomingHash = this.hashToken(oldRefreshToken);
+  if (
+    user.refreshTokenHash !== incomingHash ||
+    user.tokenVersion !== payload.tokenVersion ||
+    !user.refreshTokenExpiresAt ||
+    user.refreshTokenExpiresAt < new Date()
+  ) {
+    throw new UnauthorizedException('Refresh token invalid or reused');
+  }
+
+  const newTokenVersion = user.tokenVersion + 1;
+  const { accessToken, refreshToken } = this.signTokens(user.id, user.orgId, user.role, newTokenVersion);
+
+  await this.prisma.user.update({
+    where: { id: user.id },
+    data: {
+      tokenVersion: newTokenVersion,
+      refreshTokenHash: this.hashToken(refreshToken),
+      refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return { accessToken, refreshToken };
+}
 }   
