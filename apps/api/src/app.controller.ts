@@ -12,8 +12,8 @@ export class AppController {
   }
 
   @Get('health/tenant-context')
-checkTenantContext() {
-  const orgId = getCurrentOrgId();
-  return { orgId: orgId || 'NOT SET — middleware not working' };
+  checkTenantContext() {
+    const orgId = getCurrentOrgId();
+      return { orgId: orgId || 'NOT SET — middleware not working' };
 }
 }
