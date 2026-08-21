@@ -6,16 +6,22 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { AuthModule } from './modules/auth/auth.module';
+import { APP_GUARD } from '@nestjs/core/constants';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     HealthModule,
-    AuthModule
+    AuthModule,
+    ThrottlerModule.forRoot([{
+      ttl: Number(process.env.THROTTLE_TTL) * 1000,
+      limit: Number(process.env.THROTTLE_LIMIT),
+    }]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard },],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
