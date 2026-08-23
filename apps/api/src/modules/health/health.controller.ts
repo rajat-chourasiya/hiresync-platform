@@ -48,7 +48,7 @@ export class HealthController {
 
     @Inject(RAZORPAY)
     private readonly razorpay: Razorpay,
-  ) {}
+  ) { }
 
   // =========================
   // Basic Health
@@ -250,9 +250,15 @@ export class HealthController {
     }
   }
 
-  @Get('health/tenant-context')
-checkTenantContext() {
-  const orgId = getCurrentOrgId();
-  return { orgId: orgId || 'NOT SET — middleware not working' };
-}
+  @Get('tenant-context')
+  checkTenantContext() {
+    const orgId = getCurrentOrgId();
+    return { orgId: orgId || 'NOT SET — middleware not working' };
+  }
+
+  @Get('sanitize-test')
+  async testSanitize() {
+    const user = await this.prisma.user.findFirst();
+    return user; 
+  }
 }

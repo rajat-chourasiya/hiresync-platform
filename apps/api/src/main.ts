@@ -5,14 +5,17 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { PrismaService } from './database/prisma.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule,  {
+    logger: ['error', 'warn', 'log', 'debug'],});
 
   app.use(helmet());
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(new SanitizeInterceptor());
 
 
   const config = new DocumentBuilder()
