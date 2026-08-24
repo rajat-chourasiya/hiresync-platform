@@ -8,6 +8,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core/constants';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { JobsModule } from './modules/jobs/jobs.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     DatabaseModule,
     HealthModule,
     AuthModule,
+    JobsModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
