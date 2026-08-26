@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core/constants';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
+import { OtpModule } from './modules/otp/otp.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ApplicationsModule } from './modules/applications/applications.module';
     AuthModule,
     JobsModule,
     ApplicationsModule,
+    OtpModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
