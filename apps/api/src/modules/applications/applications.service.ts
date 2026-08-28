@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
 
@@ -7,16 +7,21 @@ export class ApplicationsService {
   constructor(private prisma: PrismaService) {}
 
   async apply(orgId: string, jobSlug: string, dto: ApplyDto) {
-    const job = await this.prisma.job.findUnique({
-      where: { orgId_slug: { orgId, slug: jobSlug } },
-    });
-    if (!job || job.status !== 'published') {
-      throw new NotFoundException('Job not found or not accepting applications');
-    }
+  const job = await this.prisma.job.findUnique({
+    where: { orgId_slug: { orgId, slug: jobSlug } },
+  });
+  if (!job || job.status !== 'published') {
+    throw new NotFoundException('Job not found or not accepting applications');
+  }
 
-    let candidate = await this.prisma.candidateProfile.findFirst({
-      where: { orgId, email: dto.email },
-    });
+  const expectedDomain = `res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`;
+  if (!dto.resumeUrl.includes(expectedDomain)) {
+    throw new BadRequestException('Invalid resume URL');
+  }
+
+  let candidate = await this.prisma.candidateProfile.findFirst({
+    where: { orgId, email: dto.email },
+  });
     if (!candidate) {
       candidate = await this.prisma.candidateProfile.create({
         data: {

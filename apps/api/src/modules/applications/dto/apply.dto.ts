@@ -17,6 +17,5 @@ export class ApplyDto {
   skills?: string[];
 
   @IsString()
-  @IsOptional()
-  resumeUrl?: string;
+  resumeUrl!: string;
 }
