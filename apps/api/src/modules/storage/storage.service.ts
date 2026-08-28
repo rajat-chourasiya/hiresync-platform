@@ -37,4 +37,23 @@ export class StorageService {
       streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
   }
+
+
+  generateSignedParams(orgId: string, candidateEmail: string) {
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = `resumes/${orgId}/${candidateEmail.replace(/[^a-zA-Z0-9]/g, '_')}/${timestamp}`;
+
+  const signature = this.cloudinary.utils.api_sign_request(
+    { timestamp, folder },
+    process.env.CLOUDINARY_API_SECRET as string,
+  );
+
+  return {
+    timestamp,
+    folder,
+    signature,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  };
+}
 }
