@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsOptional, IsArray, MinLength } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsArray, MinLength, IsUrl } from 'class-validator';
 
 export class ApplyDto {
   @IsString()
@@ -16,6 +16,6 @@ export class ApplyDto {
   @IsOptional()
   skills?: string[];
 
-  @IsString()
+  @IsUrl()
   resumeUrl!: string;
 }
