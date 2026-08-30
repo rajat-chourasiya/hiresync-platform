@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
+import { aiAnalysisQueue } from '../queue/ai-analysis.queue';
 
 @Injectable()
 export class ApplicationsService {
@@ -50,7 +51,7 @@ export class ApplicationsService {
     });
     if (existingApp) throw new ConflictException('You have already applied to this job');
 
-    return this.prisma.application.create({
+    const application = await this.prisma.application.create({
       data: {
         orgId,
         jobId: job.id,
@@ -59,5 +60,31 @@ export class ApplicationsService {
         aiAnalysisStatus: 'queued',
       },
     });
+
+    await aiAnalysisQueue.add('analyze', { applicationId: application.id });
+
+    return application;
   }
+
+  async listByJob(orgId: string, jobId: string) {
+  return this.prisma.application.findMany({
+    where: { orgId, jobId },
+    include: {
+      candidate: true,
+      aiResumeAnalysis: true, 
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+async findOne(orgId: string, id: string) {
+  return this.prisma.application.findFirst({
+    where: { id, orgId },
+    include: {
+      candidate: true,
+      job: true,
+      aiResumeAnalysis: true,
+    },
+  });
+}
 }

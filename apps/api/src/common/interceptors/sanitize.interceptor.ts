@@ -1,11 +1,13 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const SENSITIVE_FIELDS = ['passwordHash', 'refreshTokenHash', 'otpHash', 'tokenHash'];
 
 function sanitize(data: unknown): unknown {
   if (data instanceof Date) return data;
+  if (data instanceof Decimal) return Number(data);
   if (Array.isArray(data)) return data.map(sanitize);
   if (data && typeof data === 'object') {
     const clone: Record<string, unknown> = { ...(data as Record<string, unknown>) };
