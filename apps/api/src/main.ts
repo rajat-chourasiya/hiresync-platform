@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import { PrismaService } from './database/prisma.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
+import './modules/queue/ai-analysis.worker';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule,  {
