@@ -249,6 +249,12 @@ model AiResumeAnalysis {
   risks         String[]
   reviewStatus  String   @default("pending")
   rawResponse   Json?
+  candidateType          String?  
+  totalExperienceYears   Decimal? @db.Decimal(4, 1)
+  currentCompany         String?
+  currentRole            String?
+  currentTenureMonths    Int?
+  hasInternship          Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   application   Application @relation(fields: [applicationId], references: [id])
