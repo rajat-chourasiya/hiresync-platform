@@ -116,17 +116,20 @@ model CandidateProfile {
 
 model Application {
   id               String           @id @default(uuid())
+  orgId            String
   jobId            String
   candidateId      String
   status           String           @default("applied")
   aiAnalysisStatus String           @default("queued")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  orgId            String
+
   candidate        CandidateProfile @relation(fields: [candidateId], references: [id])
   job              Job              @relation(fields: [jobId], references: [id])
+  aiResumeAnalysis AiResumeAnalysis?
 
   @@unique([jobId, candidateId])
+  @@index([orgId])
   @@map("applications")
 }
 
@@ -247,6 +250,8 @@ model AiResumeAnalysis {
   reviewStatus  String   @default("pending")
   rawResponse   Json?
   createdAt     DateTime @default(now())
+
+  application   Application @relation(fields: [applicationId], references: [id])
 
   @@index([orgId])
   @@index([applicationId])
