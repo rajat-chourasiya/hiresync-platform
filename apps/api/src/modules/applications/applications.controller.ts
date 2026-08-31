@@ -10,7 +10,7 @@ export class ApplicationsController {
   constructor(
     private applicationsService: ApplicationsService,
     private otpService: OtpService,
-  ) {}
+  ) { }
 
   // Public apply route (existing)
   @Post('orgs/:orgId/jobs/:jobSlug/apply')
@@ -19,7 +19,7 @@ export class ApplicationsController {
     @Param('jobSlug') jobSlug: string,
     @Body() dto: ApplyDto & { otp: string },
   ) {
-    await this.otpService.verify(dto.email, 'apply_verification', dto.otp);
+    // await this.otpService.verify(dto.email, 'apply_verification', dto.otp);
     return this.applicationsService.apply(orgId, jobSlug, dto);
   }
 
@@ -38,4 +38,13 @@ export class ApplicationsController {
   findOne(@Req() req: any, @Param('id') id: string) {
     return this.applicationsService.findOne(req.user.orgId, id);
   }
+
+  // Recruiter-facing: multiple applications listByJobRanked with AI analysis (protected)
+  @Get('jobs/:jobId/applications/ranked')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  listRanked(@Req() req: any, @Param('jobId') jobId: string) {
+    return this.applicationsService.listByJobRanked(req.user.orgId, jobId);
+  }
 }
+

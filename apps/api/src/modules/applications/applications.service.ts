@@ -3,6 +3,12 @@ import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
 import { aiAnalysisQueue } from '../queue/ai-analysis.queue';
 
+const CANDIDATE_TYPE_WEIGHT: Record<string, number> = {
+  fresher: 1,
+  intern: 2,
+  experienced: 3,
+};
+
 @Injectable()
 export class ApplicationsService {
   constructor(private prisma: PrismaService) { }
@@ -67,24 +73,58 @@ export class ApplicationsService {
   }
 
   async listByJob(orgId: string, jobId: string) {
-  return this.prisma.application.findMany({
-    where: { orgId, jobId },
-    include: {
-      candidate: true,
-      aiResumeAnalysis: true, 
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-}
+    return this.prisma.application.findMany({
+      where: { orgId, jobId },
+      include: {
+        candidate: true,
+        aiResumeAnalysis: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 
-async findOne(orgId: string, id: string) {
-  return this.prisma.application.findFirst({
-    where: { id, orgId },
-    include: {
-      candidate: true,
-      job: true,
-      aiResumeAnalysis: true,
-    },
-  });
-}
+  async findOne(orgId: string, id: string) {
+    return this.prisma.application.findFirst({
+      where: { id, orgId },
+      include: {
+        candidate: true,
+        job: true,
+        aiResumeAnalysis: true,
+      },
+    });
+  }
+
+  async listByJobRanked(orgId: string, jobId: string) {
+    const applications = await this.prisma.application.findMany({
+      where: { orgId, jobId },
+      include: { candidate: true, aiResumeAnalysis: true },
+    });
+
+    return applications.sort((a, b) => {
+      const aiA = a.aiResumeAnalysis;
+      const aiB = b.aiResumeAnalysis;
+      if (!aiA || !aiB) return 0;
+
+      // 1. Primary: AI score (higher first)
+      const scoreDiff = this.toNumber(aiB.score) - this.toNumber(aiA.score);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      // 2. Tie-break: candidate type hierarchy (experienced > intern > fresher)
+      const typeDiff =
+        (CANDIDATE_TYPE_WEIGHT[aiB.candidateType ?? 'fresher'] ?? 0) -
+        (CANDIDATE_TYPE_WEIGHT[aiA.candidateType ?? 'fresher'] ?? 0);
+      if (typeDiff !== 0) return typeDiff;
+
+      // 3. Tie-break: years of experience (higher first)
+      const expDiff = this.toNumber(aiB.totalExperienceYears) - this.toNumber(aiA.totalExperienceYears);
+      if (expDiff !== 0) return expDiff;
+
+      // 4. Final tie-break: AI confidence (higher first)
+      return this.toNumber(aiB.confidence) - this.toNumber(aiA.confidence);
+    });
+  }
+
+  private toNumber(val: unknown): number {
+    return val ? Number(val) : 0;
+  }
 }
