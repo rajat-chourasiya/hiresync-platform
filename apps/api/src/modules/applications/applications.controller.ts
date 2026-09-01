@@ -17,9 +17,11 @@ export class ApplicationsController {
   async apply(
     @Param('orgId') orgId: string,
     @Param('jobSlug') jobSlug: string,
-    @Body() dto: ApplyDto & { otp: string },
+    @Body() dto: ApplyDto,
   ) {
-    // await this.otpService.verify(dto.email, 'apply_verification', dto.otp);
+    if (dto.otp) {
+      await this.otpService.verify(dto.email, 'apply_verification', dto.otp);
+    }
     return this.applicationsService.apply(orgId, jobSlug, dto);
   }
 
