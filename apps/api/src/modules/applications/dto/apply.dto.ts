@@ -18,4 +18,8 @@ export class ApplyDto {
 
   @IsUrl()
   resumeUrl!: string;
+
+  @IsString()
+  @IsOptional()
+  otp?: string;
 }
