@@ -12,31 +12,33 @@ const ALLOWED_MIME = [
   'video/quicktime',
 ];
 
+
 @Injectable()
 export class StorageService {
   constructor(@Inject(CLOUDINARY) private cloudinary: typeof CloudinaryType) {}
 
+  
   async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
-    if (!ALLOWED_MIME.includes(file.mimetype)) {
-      throw new BadRequestException('File type not allowed');
-    }
-
-    return new Promise((resolve, reject) => {
-      const uploadStream = this.cloudinary.uploader.upload_stream(
-        {
-          folder: 'hiresync-uploads',
-          resource_type: 'auto', // auto-detects image/video/raw(pdf)
-        },
-        (error, result) => {
-          if (error) {
-            return reject(new Error(error.message || JSON.stringify(error)));
-          }
-          resolve(result as UploadApiResponse);
-        },
-      );
-      streamifier.createReadStream(file.buffer).pipe(uploadStream);
-    });
+  if (!ALLOWED_MIME.includes(file.mimetype)) {
+    throw new BadRequestException('File type not allowed');
   }
+
+  const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'auto'; 
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = this.cloudinary.uploader.upload_stream(
+      {
+        folder: 'hiresync-uploads',
+        resource_type: resourceType, 
+      },
+      (error, result) => {
+        if (error) return reject(new Error(error.message || JSON.stringify(error)));
+        resolve(result as UploadApiResponse);
+      },
+    );
+    streamifier.createReadStream(file.buffer).pipe(uploadStream);
+  });
+}
 
 
   generateSignedParams(orgId: string, candidateEmail: string) {

@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
 import { memoryStorage } from 'multer';
 import { IsString } from 'class-validator';
+import { ApiConsumes, ApiBody } from '@nestjs/swagger';
 
 class SignUploadDto {
   @IsString()
@@ -30,6 +31,16 @@ export class StorageController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @ApiConsumes('multipart/form-data')
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      file: { type: 'string', format: 'binary' },
+    },
+  },
+})
+
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file provided');
