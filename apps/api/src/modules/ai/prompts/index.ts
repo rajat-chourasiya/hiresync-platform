@@ -1,1 +1,0 @@
-// AI prompts module placeholder

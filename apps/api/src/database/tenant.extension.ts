@@ -18,7 +18,9 @@ export const tenantExtension = Prisma.defineExtension((prisma) =>
 
           if (orgId && model && TENANT_MODELS.includes(model) && READ_OPS.includes(operation)) {
             const scopedArgs = args as { where?: Record<string, unknown> };
-            scopedArgs.where = { ...(scopedArgs.where ?? {}), orgId };
+            if (!scopedArgs.where?.orgId) {
+              scopedArgs.where = { ...(scopedArgs.where ?? {}), orgId };
+            }
           }
 
           return query(args);

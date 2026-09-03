@@ -4,43 +4,20 @@ import { aiAnalysisConnection } from './ai-analysis.queue';
 import { PrismaClient } from '@prisma/client';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
+import { RESUME_MATCH_SYSTEM_PROMPT, buildJobDescriptionBlock } from '../ai/prompts/resume-match-v3.prompt';
 
 const logger = new Logger('AiAnalysisWorker');
 const prisma = new PrismaClient();
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
-function buildPrompt(jobTitle: string, jobSkills: string[]) {
-  const today = new Date().toISOString().split('T')[0];
-  return `You are a resume screening assistant. Today's date is ${today}.
-Analyze the attached resume PDF against this job.
-
-Job Title: ${jobTitle}
-Required Skills: ${jobSkills.join(', ')}
-
-Read the resume content carefully. Extract the following, calculating all durations
-relative to today's date (${today}):
-- Total professional work experience in years (exclude internships and education; count only full-time/part-time jobs). If the candidate has never held a full-time job, this is 0.
-- Whether the candidate has done at least one internship (true/false).
-- Candidate type: "fresher" (no internship, no job experience), "intern" (has internship but no full-time job experience), or "experienced" (has at least one full-time job).
-- Current/most recent company name and role, if any.
-- How many months the candidate has been at their current/most recent company (calculate from the stated start date to today, ${today}). If a graduation or end date mentioned is already in the past relative to today, treat it as completed, not upcoming.
-
-Return ONLY valid JSON, no markdown:
-{
-  "score": <number 0-100>,
-  "confidence": <number 0-100>,
-  "matchedSkills": [<string>],
-  "missingSkills": [<string>],
-  "strengths": [<string>],
-  "risks": [<string>],
-  "candidateType": "fresher" | "intern" | "experienced",
-  "totalExperienceYears": <number, e.g. 1.5>,
-  "hasInternship": <boolean>,
-  "currentCompany": <string or null>,
-  "currentRole": <string or null>,
-  "currentTenureMonths": <number or null>
-}`;
+async function fetchResumeAsBase64(resumeUrl: string): Promise<string> {
+  const response = await axios.get(resumeUrl, { responseType: 'arraybuffer' });
+  return Buffer.from(response.data).toString('base64');
 }
+
+const CANDIDATE_LEVEL_TO_MONTHS_HINT: Record<string, number> = {
+  FRESHER: 0, L1: 6, L2: 18, L3: 36, L4: 54, L5: 90, L6: 150,
+};
 
 export const aiAnalysisWorker = new Worker(
   'ai-analysis',
@@ -62,41 +39,42 @@ export const aiAnalysisWorker = new Worker(
     await prisma.application.update({ where: { id: applicationId }, data: { aiAnalysisStatus: 'processing' } });
 
     const resumeBase64 = await fetchResumeAsBase64(application.candidate.resumeUrl as string);
+    const jdBlock = buildJobDescriptionBlock(application.job.title, application.job.description, application.job.skills);
 
     const model = gemini.getGenerativeModel({ model: process.env.GEMINI_MODEL_PRIMARY as string });
     const result = await model.generateContent([
-      { text: buildPrompt(application.job.title, application.job.skills) },
+      { text: RESUME_MATCH_SYSTEM_PROMPT },
+      { text: jdBlock },
       { inlineData: { mimeType: 'application/pdf', data: resumeBase64 } },
     ]);
 
     const cleaned = result.response.text().replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
+    if (typeof parsed.matchScore !== 'number' || !parsed.tier) {
+      throw new Error('AI response missing required fields (matchScore/tier)');
+    }
+
     await prisma.aiResumeAnalysis.create({
-  data: {
-    orgId: application.orgId,
-    jobId: application.jobId,
-    candidateId: application.candidateId,
-    applicationId: application.id,
-    modelProvider: 'google',
-    modelName: process.env.GEMINI_MODEL_PRIMARY as string,
-    promptVersion: 'resume-analysis-v3-experience',
-    score: parsed.score,
-    confidence: parsed.confidence,
-    matchedSkills: parsed.matchedSkills,
-    missingSkills: parsed.missingSkills,
-    strengths: parsed.strengths,
-    risks: parsed.risks,
-    reviewStatus: 'pending',
-    rawResponse: parsed,
-    candidateType: parsed.candidateType,
-    totalExperienceYears: parsed.totalExperienceYears,
-    hasInternship: parsed.hasInternship,
-    currentCompany: parsed.currentCompany,
-    currentRole: parsed.currentRole,
-    currentTenureMonths: parsed.currentTenureMonths,
-  },
-});
+      data: {
+        orgId: application.orgId,
+        jobId: application.jobId,
+        candidateId: application.candidateId,
+        applicationId: application.id,
+        modelProvider: 'google',
+        modelName: process.env.GEMINI_MODEL_PRIMARY as string,
+        promptVersion: 'resume-match-v3',
+        matchScore: parsed.matchScore,
+        tier: parsed.tier,
+        candidateLevel: parsed.candidateLevel ?? null,
+        roleCategory: parsed.roleCategory ?? null,
+        experienceMode: parsed.experienceMode ?? null,
+        relevantExperienceMonths: parsed.experience?.relevantMonths ?? null,
+        totalExperienceMonths: parsed.experience?.totalMonths ?? null,
+        reviewStatus: 'pending',
+        fullAnalysis: parsed,
+      },
+    });
 
     await prisma.application.update({ where: { id: applicationId }, data: { aiAnalysisStatus: 'done' } });
   },
@@ -110,8 +88,3 @@ aiAnalysisWorker.on('failed', async (job, err) => {
     await prisma.application.update({ where: { id: applicationId }, data: { aiAnalysisStatus: 'failed' } });
   }
 });
-
-async function fetchResumeAsBase64(resumeUrl: string): Promise<string> {
-  const response = await axios.get(resumeUrl, { responseType: 'arraybuffer' });
-  return Buffer.from(response.data).toString('base64');
-}
