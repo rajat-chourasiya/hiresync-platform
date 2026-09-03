@@ -3,10 +3,9 @@ import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
 import { aiAnalysisQueue } from '../queue/ai-analysis.queue';
 
-const CANDIDATE_TYPE_WEIGHT: Record<string, number> = {
-  fresher: 1,
-  intern: 2,
-  experienced: 3,
+
+const LEVEL_WEIGHT: Record<string, number> = {
+  FRESHER: 0, L1: 1, L2: 2, L3: 3, L4: 4, L5: 5, L6: 6,
 };
 
 @Injectable()
@@ -73,15 +72,15 @@ export class ApplicationsService {
   }
 
   async listByJob(orgId: string, jobId: string) {
-    return this.prisma.application.findMany({
-      where: { orgId, jobId },
-      include: {
-        candidate: true,
-        aiResumeAnalysis: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
+  console.log('Service received orgId:', orgId, 'jobId:', jobId);
+  const result = await this.prisma.application.findMany({
+    where: { orgId, jobId },
+    include: { candidate: true, aiResumeAnalysis: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  console.log('Result count:', result.length);
+  return result;
+}
 
   async findOne(orgId: string, id: string) {
     return this.prisma.application.findFirst({
@@ -94,37 +93,36 @@ export class ApplicationsService {
     });
   }
 
-  async listByJobRanked(orgId: string, jobId: string) {
-    const applications = await this.prisma.application.findMany({
-      where: { orgId, jobId },
-      include: { candidate: true, aiResumeAnalysis: true },
-    });
 
-    return applications.sort((a, b) => {
-      const aiA = a.aiResumeAnalysis;
-      const aiB = b.aiResumeAnalysis;
-      if (!aiA || !aiB) return 0;
 
-      // 1. Primary: AI score (higher first)
-      const scoreDiff = this.toNumber(aiB.score) - this.toNumber(aiA.score);
-      if (scoreDiff !== 0) return scoreDiff;
+// listByJobRanked() method ke andar, sort logic replace karo:
+async listByJobRanked(orgId: string, jobId: string) {
+  const applications = await this.prisma.application.findMany({
+    where: { orgId, jobId },
+    include: { candidate: true, aiResumeAnalysis: true },
+  });
 
-      // 2. Tie-break: candidate type hierarchy (experienced > intern > fresher)
-      const typeDiff =
-        (CANDIDATE_TYPE_WEIGHT[aiB.candidateType ?? 'fresher'] ?? 0) -
-        (CANDIDATE_TYPE_WEIGHT[aiA.candidateType ?? 'fresher'] ?? 0);
-      if (typeDiff !== 0) return typeDiff;
+  return applications.sort((a, b) => {
+    const aiA = a.aiResumeAnalysis;
+    const aiB = b.aiResumeAnalysis;
+    if (!aiA || !aiB) return 0;
 
-      // 3. Tie-break: years of experience (higher first)
-      const expDiff = this.toNumber(aiB.totalExperienceYears) - this.toNumber(aiA.totalExperienceYears);
-      if (expDiff !== 0) return expDiff;
+    // 1. Primary: matchScore (higher first)
+    const scoreDiff = this.toNumber(aiB.matchScore) - this.toNumber(aiA.matchScore);
+    if (scoreDiff !== 0) return scoreDiff;
 
-      // 4. Final tie-break: AI confidence (higher first)
-      return this.toNumber(aiB.confidence) - this.toNumber(aiA.confidence);
-    });
-  }
+    // 2. Tie-break: candidate level hierarchy (FRESHER < L1 < ... < L6)
+    const levelDiff =
+      (LEVEL_WEIGHT[aiB.candidateLevel ?? 'FRESHER'] ?? 0) -
+      (LEVEL_WEIGHT[aiA.candidateLevel ?? 'FRESHER'] ?? 0);
+    if (levelDiff !== 0) return levelDiff;
 
-  private toNumber(val: unknown): number {
-    return val ? Number(val) : 0;
-  }
+    // 3. Final tie-break: relevant experience months (higher first)
+    return (aiB.relevantExperienceMonths ?? 0) - (aiA.relevantExperienceMonths ?? 0);
+  });
+}
+
+private toNumber(val: unknown): number {
+  return val ? Number(val) : 0;
+}
 }

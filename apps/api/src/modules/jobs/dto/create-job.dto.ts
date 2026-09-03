@@ -5,6 +5,10 @@ export class CreateJobDto {
   @MinLength(3)
   title!: string;
 
+  @IsString()
+  @IsOptional()
+  description?: string;
+
   @IsArray()
   @IsOptional()
   skills?: string[];
