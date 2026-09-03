@@ -85,11 +85,13 @@ model Job {
   orgId        String
   title        String
   slug         String
+  description  String?
   skills       String[]
+  stages       String[]      @default([])
   status       String        @default("draft")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  stages       String[]      @default([])
+  
   applications Application[]
   organization Organization  @relation(fields: [orgId], references: [id])
 
@@ -241,23 +243,19 @@ model AiResumeAnalysis {
   modelProvider String
   modelName     String
   promptVersion String
-  score         Decimal? @db.Decimal(5, 2)
-  confidence    Decimal? @db.Decimal(5, 2)
-  matchedSkills String[]
-  missingSkills String[]
-  strengths     String[]
-  risks         String[]
-  reviewStatus  String   @default("pending")
-  rawResponse   Json?
-  candidateType          String?  
-  totalExperienceYears   Decimal? @db.Decimal(4, 1)
-  currentCompany         String?
-  currentRole            String?
-  currentTenureMonths    Int?
-  hasInternship          Boolean  @default(false)
-  createdAt     DateTime @default(now())
 
-  application   Application @relation(fields: [applicationId], references: [id])
+  matchScore              Decimal? @db.Decimal(5, 2)
+  tier                    String?   // "Strong Match" | "Good Match" | "Consider" | "Low Fit"
+  candidateLevel          String?   // FRESHER | L1 | L2 | ... | L6
+  roleCategory            String?
+  experienceMode          String?   // FRESHER_ONLY | RANGE | SENIOR | UNSPECIFIED
+  relevantExperienceMonths Int?
+  totalExperienceMonths    Int?
+  reviewStatus            String   @default("pending")
+  fullAnalysis             Json?      // complete structured output — experience, signals, skillMatch, weights, criterionScores, mismatchFlags, careerGaps, explainability, interviewPlan, etc.
+  createdAt               DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
 
   @@index([orgId])
   @@index([applicationId])
