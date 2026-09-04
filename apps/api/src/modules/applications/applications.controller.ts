@@ -1,9 +1,10 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, Patch } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApplicationsService } from './applications.service';
 import { ApplyDto } from './dto/apply.dto';
 import { OtpService } from '../otp/otp.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ReviewApplicationDto } from './dto/review-application.dto';
 
 @Controller()
 export class ApplicationsController {
@@ -47,6 +48,13 @@ export class ApplicationsController {
   @ApiBearerAuth()
   listRanked(@Req() req: any, @Param('jobId') jobId: string) {
     return this.applicationsService.listByJobRanked(req.user.orgId, jobId);
+  }
+
+  @Patch('applications/:id/review')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  review(@Req() req: any, @Param('id') id: string, @Body() dto: ReviewApplicationDto) {
+    return this.applicationsService.review(req.user.orgId, id, dto);
   }
 }
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
 import { aiAnalysisQueue } from '../queue/ai-analysis.queue';
+import { ReviewApplicationDto } from './dto/review-application.dto';
 
 
 const LEVEL_WEIGHT: Record<string, number> = {
@@ -95,7 +96,7 @@ export class ApplicationsService {
 
 
 
-// listByJobRanked() method ke andar, sort logic replace karo:
+
 async listByJobRanked(orgId: string, jobId: string) {
   const applications = await this.prisma.application.findMany({
     where: { orgId, jobId },
@@ -124,5 +125,37 @@ async listByJobRanked(orgId: string, jobId: string) {
 
 private toNumber(val: unknown): number {
   return val ? Number(val) : 0;
+}
+
+
+async review(orgId: string, applicationId: string, dto: ReviewApplicationDto) {
+  const application = await this.prisma.application.findFirst({
+    where: { id: applicationId, orgId },
+  });
+  if (!application) throw new NotFoundException('Application not found');
+
+  const updated = await this.prisma.application.update({
+    where: { id: applicationId },
+    data: { status: dto.status },
+  });
+
+  if (application.orgId) {
+    await this.prisma.aiResumeAnalysis.updateMany({
+      where: { applicationId },
+      data: { reviewStatus: 'reviewed' },
+    });
+  }
+
+  await this.prisma.auditLog.create({
+    data: {
+      orgId,
+      action: 'application.review',
+      resourceType: 'Application',
+      resourceId: applicationId,
+      metadata: { newStatus: dto.status, reviewNote: dto.reviewNote ?? null },
+    },
+  });
+
+  return updated;
 }
 }
