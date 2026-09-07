@@ -15,6 +15,17 @@ export class VideoService {
     });
   }
 
+  async createCall(roomId: string, createdByUserId: string, memberIds: string[]) {
+    const call = this.client.video.call('default', roomId);
+    await call.getOrCreate({
+      data: {
+        created_by_id: createdByUserId,
+        members: memberIds.map((id) => ({ user_id: id })),
+      },
+    });
+    return call;
+  }
+
   // Health check
   async checkConnection(): Promise<void> {
     await this.client.upsertUsers([
