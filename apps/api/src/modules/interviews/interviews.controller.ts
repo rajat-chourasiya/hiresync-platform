@@ -4,6 +4,7 @@ import { InterviewsService } from './interviews.service';
 import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { VideoService } from '../video/video.service';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @Controller('interviews')
 @UseGuards(JwtAuthGuard)
@@ -12,13 +13,14 @@ export class InterviewsController {
     constructor(private interviewsService: InterviewsService, private videoService: VideoService,) { }
 
     @Post()
+    @RequirePermission('interviews.schedule')
     schedule(@Req() req: any, @Body() dto: ScheduleInterviewDto) {
         return this.interviewsService.schedule(req.user.orgId, dto);
     }
 
     @Get()
     findAll(@Req() req: any) {
-        return this.interviewsService.findAll(req.user.orgId);
+        return this.interviewsService.findAll(req.user.orgId, req.user.sub, req.user.role);
     }
 
     @Get(':id')

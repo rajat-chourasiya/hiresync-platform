@@ -12,6 +12,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { InterviewsModule } from './modules/interviews/interviews.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { InterviewsModule } from './modules/interviews/interviews.module';
     ApplicationsModule,
     OtpModule,
     InterviewsModule,
+    UsersModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
