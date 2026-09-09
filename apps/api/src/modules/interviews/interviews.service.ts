@@ -53,9 +53,16 @@ export class InterviewsService {
     return interview;
   }
 
-  async findAll(orgId: string) {
-    return this.prisma.interview.findMany({ where: { orgId }, orderBy: { scheduledStart: 'asc' } });
+  async findAll(orgId: string, userId: string, role: string) {
+  if (role === 'interviewer') {
+    return this.prisma.interview.findMany({
+      where: { orgId, interviewerIds: { has: userId } },
+      orderBy: { scheduledStart: 'asc' },
+    });
   }
+
+  return this.prisma.interview.findMany({ where: { orgId }, orderBy: { scheduledStart: 'asc' } });
+}
 
   async findOne(orgId: string, id: string) {
     return this.prisma.interview.findFirst({ where: { id, orgId } });
