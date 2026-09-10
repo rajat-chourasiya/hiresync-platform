@@ -3,14 +3,17 @@ import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 
 @Controller('jobs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard , PermissionsGuard)
 @ApiBearerAuth()
 export class JobsController {
   constructor(private jobsService: JobsService) {}
 
   @Post()
+  @RequirePermission('jobs.create')
   create(@Req() req: any, @Body() dto: CreateJobDto) {
     return this.jobsService.create(req.user.orgId, dto);
   }
@@ -26,6 +29,7 @@ export class JobsController {
   }
 
   @Patch(':id/publish')
+  @RequirePermission('jobs.publish')
   publish(@Req() req: any, @Param('id') id: string) {
     return this.jobsService.publish(req.user.orgId, id);
   }

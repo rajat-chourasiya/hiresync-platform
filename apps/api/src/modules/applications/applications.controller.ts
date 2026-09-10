@@ -5,6 +5,8 @@ import { ApplyDto } from './dto/apply.dto';
 import { OtpService } from '../otp/otp.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ReviewApplicationDto } from './dto/review-application.dto';
+import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 
 @Controller()
 export class ApplicationsController {
@@ -28,7 +30,8 @@ export class ApplicationsController {
 
   // Recruiter-facing: list applications for a job (protected)
   @Get('jobs/:jobId/applications')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('applications.view')
   @ApiBearerAuth()
   listByJob(@Req() req: any, @Param('jobId') jobId: string) {
     return this.applicationsService.listByJob(req.user.orgId, jobId);
@@ -51,7 +54,8 @@ export class ApplicationsController {
   }
 
   @Patch('applications/:id/review')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('applications.review')
   @ApiBearerAuth()
   review(@Req() req: any, @Param('id') id: string, @Body() dto: ReviewApplicationDto) {
     return this.applicationsService.review(req.user.orgId, id, dto);
