@@ -9,6 +9,9 @@ export const StreamProvider: Provider = {
     return new StreamClient(
       process.env.STREAM_API_KEY as string,
       process.env.STREAM_SECRET as string,
+      {
+        timeout: 10000,
+      },
     );
   },
 };
