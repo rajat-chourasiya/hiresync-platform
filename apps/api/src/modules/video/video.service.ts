@@ -15,7 +15,15 @@ export class VideoService {
     });
   }
 
+  async ensureUsersExist(userIds: string[]) {
+    await this.client.upsertUsers(
+      userIds.map((id) => ({ id, role: 'user' })),
+    );
+  }
+
   async createCall(roomId: string, createdByUserId: string, memberIds: string[]) {
+    await this.ensureUsersExist(memberIds);
+    
     const call = this.client.video.call('default', roomId);
     await call.getOrCreate({
       data: {

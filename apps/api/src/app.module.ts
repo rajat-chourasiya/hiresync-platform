@@ -13,6 +13,8 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { InterviewsModule } from './modules/interviews/interviews.module';
 import { UsersModule } from './modules/users/users.module';
+import { CandidatePortalModule } from './modules/candidate-portal/candidate-portal.module';
+import { CandidateAuthModule } from './modules/candidate-auth/candidate-auth.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UsersModule } from './modules/users/users.module';
     OtpModule,
     InterviewsModule,
     UsersModule,
+    CandidatePortalModule,
+    CandidateAuthModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
