@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
 import * as crypto from 'crypto';
@@ -16,6 +16,14 @@ export class InterviewsService {
 
     const start = new Date(dto.scheduledStart);
     const end = new Date(dto.scheduledEnd);
+
+    if (start <= new Date()) {
+      throw new BadRequestException('Interview cannot be scheduled in the past');
+    }
+    
+    if (end <= start) {
+      throw new BadRequestException('scheduledEnd must be after scheduledStart');
+    }
 
     // Conflict check — same interviewer already booked in overlapping time
     const conflicts = await this.prisma.interview.findMany({
