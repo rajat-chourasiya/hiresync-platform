@@ -22,17 +22,21 @@ export class CodeExecutionService {
   ): Promise<PistonResponse> {
     try {
       const response = await axios.post<PistonResponse>(
-        `${process.env.PISTON_RUNNER_URL}/run`,
+        `${process.env.PISTON_URL}/run`,
         {
           language,
           version,
           code,
         },
+        { timeout: Number(process.env.PISTON_TIMEOUT_MS) || 10000 },
       );
 
       return response.data;
-    } catch {
-      throw new BadRequestException('Code execution failed');
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data ?? err.message)
+        : err instanceof Error ? err.message : 'Unknown error';
+      throw new BadRequestException(`Code execution failed: ${JSON.stringify(message)}`);
     }
   }
 }
