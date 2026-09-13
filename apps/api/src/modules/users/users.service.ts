@@ -17,6 +17,7 @@ export class UsersService {
       data: {
         orgId,
         email: dto.email,
+        name: dto.name,
         passwordHash,
         role: dto.role,
       },

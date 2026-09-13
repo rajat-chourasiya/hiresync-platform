@@ -28,14 +28,18 @@ export class CodeExecutionController {
 
   // Candidate run
   @Post('candidate')
-  @UseGuards(CandidateAuthGuard)
-  @ApiBearerAuth()
-  async runAsCandidate(@Req() req: any, @Param('interviewId') interviewId: string, @Body() dto: RunCodeDto) {
-    const interview = await this.prisma.interview.findFirst({ where: { id: interviewId, orgId: req.candidate.orgId } });
-    if (!interview) throw new NotFoundException('Interview not found');
-    if (interview.candidateId !== req.candidate.candidateId) {
-      throw new ForbiddenException('This is not your interview');
-    }
-    return this.codeExecutionService.run(dto.language, dto.version, dto.code);
+@UseGuards(CandidateAuthGuard)
+@ApiBearerAuth()
+async runAsCandidate(@Req() req: any, @Param('interviewId') interviewId: string, @Body() dto: RunCodeDto) {
+  const interview = await this.prisma.interview.findFirst({ where: { id: interviewId, orgId: req.candidate.orgId } });
+  if (!interview) throw new NotFoundException('Interview not found');
+
+  if (!interview.enabledTools.includes('code_execution')) {
+    throw new ForbiddenException('Code execution is not enabled for this interview');
   }
+  if (!interview.candidateIds.includes(req.candidate.candidateId)) {
+    throw new ForbiddenException('This is not your interview');
+  }
+  return this.codeExecutionService.run(dto.language, dto.version, dto.code);
+}
 }

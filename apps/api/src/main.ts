@@ -1,23 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { PrismaService } from './database/prisma.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
-import './modules/queue/ai-analysis.worker';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule,  {
-    logger: ['error', 'warn', 'log', 'debug'],});
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'],
+  });
 
+  app.useWebSocketAdapter(new IoAdapter(app)); 
   app.use(helmet());
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new SanitizeInterceptor());
-
 
   const config = new DocumentBuilder()
     .setTitle('HireSync API')

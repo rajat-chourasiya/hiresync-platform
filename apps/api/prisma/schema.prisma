@@ -25,6 +25,7 @@ model User {
   id                    String       @id @default(uuid())
   orgId                 String
   email                 String       @unique
+  name                  String?
   passwordHash          String
   role                  String
   tokenVersion          Int          @default(0)
@@ -151,15 +152,18 @@ model OtpVerification {
 
 model Interview {
   id             String                 @id @default(uuid())
+  orgId          String
   jobId          String
-  candidateId    String
+  interviewType  String   @default("single_candidate")  // "single_candidate" | "group_discussion"
+  candidateIds   String[]
   interviewerIds String[]
+  enabledTools   String[] @default(["chat", "video"])
   scheduledStart DateTime
   scheduledEnd   DateTime
   roomId         String                 @unique
   status         String                 @default("scheduled")
   createdAt      DateTime               @default(now())
-  orgId          String
+
   feedbacks      Feedback[]
   accessTokens   InterviewAccessToken[]
   room           InterviewRoom?
@@ -196,15 +200,21 @@ model InterviewAccessToken {
   @@map("interview_access_tokens")
 }
 
-model ChatMessage {
-  id         String   @id @default(uuid())
-  roomId     String
-  senderId   String
-  senderType String
-  message    String
-  createdAt  DateTime @default(now())
+enum ChatChannel {
+  CANDIDATE
+  INTERVIEWER
+}
 
-  @@index([roomId, createdAt])
+model ChatMessage {
+  id         String      @id @default(uuid())
+  roomId     String
+  channel    ChatChannel
+  senderId   String
+  senderType String      // "staff" | "candidate" | "ai" (future)
+  message    String
+  createdAt  DateTime    @default(now())
+
+  @@index([roomId, channel, createdAt])
   @@map("chat_messages")
 }
 
