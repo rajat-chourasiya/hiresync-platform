@@ -1,4 +1,6 @@
-import { IsString, IsArray, IsDateString, Validate, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { IsString, IsArray, IsDateString, Validate, ValidatorConstraint, ValidatorConstraintInterface, IsIn, IsOptional } from 'class-validator';
+
+const VALID_TOOLS = ['chat', 'video', 'code_execution', 'whiteboard'];
 
 @ValidatorConstraint({ name: 'isFutureDate', async: false })
 class IsFutureDateConstraint implements ValidatorConstraintInterface {
@@ -11,11 +13,19 @@ class IsFutureDateConstraint implements ValidatorConstraintInterface {
 }
 
 export class ScheduleInterviewDto {
+  @IsArray()
+  applicationIds!: string[];
+
   @IsString()
-  applicationId!: string;
+  @IsIn(['single_candidate', 'group_discussion'])
+  interviewType!: string;
 
   @IsArray()
   interviewerIds!: string[];
+
+  @IsArray()
+  @IsOptional()
+  enabledTools?: string[];
 
   @IsDateString()
   @Validate(IsFutureDateConstraint)
@@ -24,3 +34,5 @@ export class ScheduleInterviewDto {
   @IsDateString()
   scheduledEnd!: string;
 }
+
+export { VALID_TOOLS };

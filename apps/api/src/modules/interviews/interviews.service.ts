@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
+import { ScheduleInterviewDto, VALID_TOOLS } from './dto/schedule-interview.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -8,11 +8,25 @@ export class InterviewsService {
   constructor(private prisma: PrismaService) {}
 
   async schedule(orgId: string, dto: ScheduleInterviewDto) {
-    const application = await this.prisma.application.findFirst({
-      where: { id: dto.applicationId, orgId },
-      include: { job: true },
-    });
-    if (!application) throw new NotFoundException('Application not found');
+    if (dto.interviewType === 'single_candidate' && dto.applicationIds.length !== 1) {
+    throw new BadRequestException('single_candidate interviews must have exactly one candidate');
+  }
+  if (dto.interviewType === 'group_discussion' && dto.applicationIds.length < 2) {
+    throw new BadRequestException('group_discussion requires at least 2 candidates');
+  }
+
+  const tools = dto.enabledTools?.length ? dto.enabledTools : ['chat', 'video'];
+  const invalidTools = tools.filter((t) => !VALID_TOOLS.includes(t));
+  if (invalidTools.length > 0) {
+    throw new BadRequestException(`Invalid tools: ${invalidTools.join(', ')}`);
+  }
+
+    const applications = await this.prisma.application.findMany({
+    where: { id: { in: dto.applicationIds }, orgId },
+  });
+  if (applications.length !== dto.applicationIds.length) {
+    throw new NotFoundException('One or more applications not found');
+  }
 
     const start = new Date(dto.scheduledStart);
     const end = new Date(dto.scheduledEnd);
@@ -25,41 +39,52 @@ export class InterviewsService {
       throw new BadRequestException('scheduledEnd must be after scheduledStart');
     }
 
-    // Conflict check — same interviewer already booked in overlapping time
     const conflicts = await this.prisma.interview.findMany({
-      where: {
-        orgId,
-        interviewerIds: { hasSome: dto.interviewerIds },
-        scheduledStart: { lt: end },
-        scheduledEnd: { gt: start },
-      },
-    });
-    if (conflicts.length > 0) {
-      throw new ConflictException('One or more interviewers have a scheduling conflict');
-    }
+    where: {
+      orgId,
+      interviewerIds: { hasSome: dto.interviewerIds },
+      scheduledStart: { lt: end },
+      scheduledEnd: { gt: start },
+    },
+  });
+  if (conflicts.length > 0) throw new ConflictException('One or more interviewers have a scheduling conflict');
+
 
     const roomId = crypto.randomBytes(8).toString('hex');
+    const candidateIds = applications.map((a) => a.candidateId);
 
     const interview = await this.prisma.interview.create({
-      data: {
-        orgId,
-        jobId: application.jobId,
-        candidateId: application.candidateId,
-        interviewerIds: dto.interviewerIds,
-        scheduledStart: start,
-        scheduledEnd: end,
-        roomId,
-        status: 'scheduled',
-      },
-    });
+    data: {
+      orgId,
+      jobId: applications[0].jobId,
+      interviewType: dto.interviewType, candidateIds,
+      interviewerIds: dto.interviewerIds,
+      enabledTools: tools,
+      scheduledStart: start,
+      scheduledEnd: end,
+      roomId,
+      status: 'scheduled',
+    },
+  });
 
-    await this.prisma.application.update({
-      where: { id: application.id },
-      data: { status: 'interview_scheduled' },
-    });
+    await this.prisma.application.updateMany({
+    where: { id: { in: dto.applicationIds } },
+    data: { status: 'interview_scheduled' },
+  });
 
-    return interview;
+  return interview;
   }
+
+  async updateTools(orgId: string, interviewId: string, tools: string[]) {
+  const invalidTools = tools.filter((t) => !VALID_TOOLS.includes(t));
+  if (invalidTools.length > 0) throw new BadRequestException(`Invalid tools: ${invalidTools.join(', ')}`);
+
+  const interview = await this.prisma.interview.findFirst({ where: { id: interviewId, orgId } });
+  if (!interview) throw new NotFoundException('Interview not found');
+
+  return this.prisma.interview.update({ where: { id: interviewId }, data: { enabledTools: tools } });
+}
+
 
   async findAll(orgId: string, userId: string, role: string) {
   if (role === 'interviewer') {

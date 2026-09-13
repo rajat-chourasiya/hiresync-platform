@@ -16,6 +16,8 @@ import { UsersModule } from './modules/users/users.module';
 import { CandidatePortalModule } from './modules/candidate-portal/candidate-portal.module';
 import { CandidateAuthModule } from './modules/candidate-auth/candidate-auth.module';
 import { CodeExecutionModule } from './modules/code-execution/code-execution.module';
+import { InterviewChatModule } from './modules/interview-chat/interview-chat.module';
+import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { CodeExecutionModule } from './modules/code-execution/code-execution.mod
     CandidatePortalModule,
     CandidateAuthModule,
     CodeExecutionModule,
+    InterviewChatModule,
+    GatewayModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, NotFoundException, ForbiddenException, Patch } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { InterviewsService } from './interviews.service';
 import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
@@ -62,17 +62,26 @@ export class InterviewsController {
   @Get(':id/candidate-join')
   @UseGuards(CandidateAuthGuard)
   @ApiBearerAuth()
+
   async candidateJoin(@Req() req: any, @Param('id') id: string) {
     const interview = await this.interviewsService.findOne(req.candidate.orgId, id);
     if (!interview) throw new NotFoundException('Interview not found');
 
-    if (interview.candidateId !== req.candidate.candidateId) {
-      throw new ForbiddenException('This is not your interview');
-    }
+    if (!interview.candidateIds.includes(req.candidate.candidateId)) {
+  throw new ForbiddenException('This is not your interview');
+}
 
     const memberIds = Array.from(new Set([req.candidate.candidateId, ...interview.interviewerIds]));
     await this.videoService.createCall(interview.roomId, req.candidate.candidateId, memberIds);
     const token = this.videoService.generateUserToken(req.candidate.candidateId);
     return { roomId: interview.roomId, token, apiKey: process.env.STREAM_API_KEY };
   }
+
+  @Patch(':id/tools')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('interviews.schedule')
+  @ApiBearerAuth()
+  updateTools(@Req() req: any, @Param('id') id: string, @Body('enabledTools') tools: string[]) {
+    return this.interviewsService.updateTools(req.user.orgId, id, tools);
+}
 }
