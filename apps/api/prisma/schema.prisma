@@ -234,14 +234,76 @@ model CodeSnapshot {
 model Feedback {
   id             String    @id @default(uuid())
   interviewId    String
+  applicationId  String    
   interviewerId  String
-  scores         Json
+  candidateId    String
+  scores         Json      // { criteria: [...], weightedScore, strengths, weaknesses, behavioralNotes }
   recommendation String?
   submittedAt    DateTime  @default(now())
   interview      Interview @relation(fields: [interviewId], references: [id])
 
   @@index([interviewId])
+  @@index([applicationId])
   @@map("feedbacks")
+}
+
+model RecruiterEvaluation {
+  id             String   @id @default(uuid())
+  applicationId  String   @unique
+  recruiterId    String
+  criteria       Json     // [{key,label,weight,score,evidence}]
+  weightedScore  Decimal  @db.Decimal(3, 2)
+  noticePeriod   String   // status field, NOT scored
+  salaryFit      String   // status field, NOT scored
+  recommendation String?
+  createdAt      DateTime @default(now())
+
+  @@map("recruiter_evaluations")
+}
+
+model ManagerEvaluation {
+  id             String   @id @default(uuid())
+  applicationId  String   @unique
+  managerId      String
+  criteria       Json
+  weightedScore  Decimal  @db.Decimal(3, 2)
+  riskNotes      String?
+  riskSeverity   String?  // low | medium | high
+  recommendation String?
+  overrideReason String?  // mandatory if tier overridden
+  createdAt      DateTime @default(now())
+
+  @@map("manager_evaluations")
+}
+
+model HiringDecision {
+  id               String    @id @default(uuid())
+  applicationId    String    @unique
+  interviewScore   Decimal?  @db.Decimal(3, 2)
+  recruiterScore   Decimal?  @db.Decimal(3, 2)
+  preManagerScore  Decimal?  @db.Decimal(3, 2)
+  gatePassed       Boolean?
+  managerScore     Decimal?  @db.Decimal(3, 2)
+  finalScore       Decimal?  @db.Decimal(3, 2)
+  tier             String?
+  overriddenTier   String?
+  overrideReason   String?
+  updatedAt        DateTime  @updatedAt
+
+  @@map("hiring_decisions")
+}
+
+model CalibrationLog {
+  id             String   @id @default(uuid())
+  applicationId  String
+  computedTier   String
+  overriddenTier String
+  overrideReason String
+  overriddenBy   String
+  createdAt      DateTime @default(now())
+
+  @@index([applicationId])
+  @@map("calibration_logs")
 }
 
 model AiResumeAnalysis {
