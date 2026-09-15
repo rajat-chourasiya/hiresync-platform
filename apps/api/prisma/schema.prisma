@@ -288,6 +288,10 @@ model HiringDecision {
   tier             String?
   overriddenTier   String?
   overrideReason   String?
+  status           String    @default("pending")   // pending | ready | approved | rejected
+  approvedBy       String?                         
+  approvedAt       DateTime?                         
+  approvalNote     String?                          
   updatedAt        DateTime  @updatedAt
 
   @@map("hiring_decisions")
