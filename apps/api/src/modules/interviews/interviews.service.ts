@@ -8,7 +8,7 @@ export class InterviewsService {
   constructor(private prisma: PrismaService) {}
 
   async schedule(orgId: string, dto: ScheduleInterviewDto) {
-    if (dto.interviewType === 'single_candidate' && dto.applicationIds.length !== 1) {
+  if (dto.interviewType === 'single_candidate' && dto.applicationIds.length !== 1) {
     throw new BadRequestException('single_candidate interviews must have exactly one candidate');
   }
   if (dto.interviewType === 'group_discussion' && dto.applicationIds.length < 2) {
@@ -21,25 +21,31 @@ export class InterviewsService {
     throw new BadRequestException(`Invalid tools: ${invalidTools.join(', ')}`);
   }
 
-    const applications = await this.prisma.application.findMany({
+  const applications = await this.prisma.application.findMany({
     where: { id: { in: dto.applicationIds }, orgId },
   });
   if (applications.length !== dto.applicationIds.length) {
     throw new NotFoundException('One or more applications not found');
   }
 
-    const start = new Date(dto.scheduledStart);
-    const end = new Date(dto.scheduledEnd);
+  const notShortlisted = applications.filter((a) => a.status !== 'shortlisted');
+  if (notShortlisted.length > 0) {
+    throw new BadRequestException(
+      `Cannot schedule interview: candidates must be shortlisted first (found status: ${notShortlisted.map((a) => a.status).join(', ')})`,
+    );
+  }
 
-    if (start <= new Date()) {
-      throw new BadRequestException('Interview cannot be scheduled in the past');
-    }
-    
-    if (end <= start) {
-      throw new BadRequestException('scheduledEnd must be after scheduledStart');
-    }
+  const start = new Date(dto.scheduledStart);
+  const end = new Date(dto.scheduledEnd);
 
-    const conflicts = await this.prisma.interview.findMany({
+  if (start <= new Date()) {
+    throw new BadRequestException('Interview cannot be scheduled in the past');
+  }
+  if (end <= start) {
+    throw new BadRequestException('scheduledEnd must be after scheduledStart');
+  }
+
+  const conflicts = await this.prisma.interview.findMany({
     where: {
       orgId,
       interviewerIds: { hasSome: dto.interviewerIds },
@@ -49,15 +55,15 @@ export class InterviewsService {
   });
   if (conflicts.length > 0) throw new ConflictException('One or more interviewers have a scheduling conflict');
 
+  const roomId = crypto.randomBytes(8).toString('hex');
+  const candidateIds = applications.map((a) => a.candidateId);
 
-    const roomId = crypto.randomBytes(8).toString('hex');
-    const candidateIds = applications.map((a) => a.candidateId);
-
-    const interview = await this.prisma.interview.create({
+  const interview = await this.prisma.interview.create({
     data: {
       orgId,
       jobId: applications[0].jobId,
-      interviewType: dto.interviewType, candidateIds,
+      interviewType: dto.interviewType,
+      candidateIds,
       interviewerIds: dto.interviewerIds,
       enabledTools: tools,
       scheduledStart: start,
@@ -67,13 +73,13 @@ export class InterviewsService {
     },
   });
 
-    await this.prisma.application.updateMany({
+  await this.prisma.application.updateMany({
     where: { id: { in: dto.applicationIds } },
     data: { status: 'interview_scheduled' },
   });
 
   return interview;
-  }
+}
 
   async updateTools(orgId: string, interviewId: string, tools: string[]) {
   const invalidTools = tools.filter((t) => !VALID_TOOLS.includes(t));
