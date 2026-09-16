@@ -155,13 +155,20 @@ const evaluation = await this.prisma.recruiterEvaluation.create({
   }
 
   async approveHire(orgId: string, applicationId: string, approverId: string, dto: ApproveHireDto) {
+    
+    if (!applicationId || typeof applicationId !== 'string' || applicationId.trim().length === 0) {
+    throw new BadRequestException('applicationId is required');
+  }
     const application = await this.prisma.application.findFirst({ where: { id: applicationId, orgId } });
     if (!application) throw new NotFoundException('Application not found');
 
     const decision = await this.prisma.hiringDecision.findUnique({ where: { applicationId } });
+    
     if (!decision || decision.status !== 'ready') {
       throw new BadRequestException('Hiring decision is not ready for approval — manager evaluation must be completed first');
     }
+
+    
 
     if (dto.action === 'approve') {
       await this.prisma.hiringDecision.update({
