@@ -10,14 +10,49 @@ const logger = new Logger('AiAnalysisWorker');
 const prisma = new PrismaClient();
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
+const MODELS = [
+  process.env.GEMINI_MODEL_PRIMARY,
+  process.env.GEMINI_MODEL_SECONDARY,
+  process.env.GEMINI_MODEL_TERTIARY,
+].filter((m): m is string => Boolean(m));
+
 async function fetchResumeAsBase64(resumeUrl: string): Promise<string> {
   const response = await axios.get(resumeUrl, { responseType: 'arraybuffer' });
   return Buffer.from(response.data).toString('base64');
 }
 
-const CANDIDATE_LEVEL_TO_MONTHS_HINT: Record<string, number> = {
-  FRESHER: 0, L1: 6, L2: 18, L3: 36, L4: 54, L5: 90, L6: 150,
-};
+function isRetryable(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return (
+    message.includes('503') || message.includes('500') || message.includes('502') ||
+    message.includes('504') || message.includes('429') ||
+    message.includes('quota') || message.includes('rate limit') || message.includes('overloaded') ||
+    message.includes('unavailable')
+  );
+}
+
+async function generateWithFallback(promptParts: any[]): Promise<string> {
+  let lastError: unknown;
+
+  for (const modelName of MODELS) {
+    try {
+      logger.log(`Trying model: ${modelName}`);
+      const model = gemini.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(promptParts);
+      const text = result.response.text();
+      if (!text) throw new Error(`${modelName} returned empty response`);
+      logger.log(`Success with model: ${modelName}`);
+      return text;
+    } catch (error) {
+      lastError = error;
+      logger.warn(`Model ${modelName} failed: ${error instanceof Error ? error.message : error}`);
+      if (!isRetryable(error)) throw error; 
+      
+    }
+  }
+
+  throw new Error(`All Gemini models failed. Last error: ${lastError instanceof Error ? lastError.message : 'Unknown'}`);
+}
 
 export const aiAnalysisWorker = new Worker(
   'ai-analysis',
@@ -41,14 +76,13 @@ export const aiAnalysisWorker = new Worker(
     const resumeBase64 = await fetchResumeAsBase64(application.candidate.resumeUrl as string);
     const jdBlock = buildJobDescriptionBlock(application.job.title, application.job.description, application.job.skills);
 
-    const model = gemini.getGenerativeModel({ model: process.env.GEMINI_MODEL_PRIMARY as string });
-    const result = await model.generateContent([
+    const responseText = await generateWithFallback([
       { text: RESUME_MATCH_SYSTEM_PROMPT },
       { text: jdBlock },
       { inlineData: { mimeType: 'application/pdf', data: resumeBase64 } },
     ]);
 
-    const cleaned = result.response.text().replace(/```json|```/g, '').trim();
+    const cleaned = responseText.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
     if (typeof parsed.matchScore !== 'number' || !parsed.tier) {
