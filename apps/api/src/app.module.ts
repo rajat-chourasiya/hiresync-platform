@@ -20,6 +20,7 @@ import { InterviewChatModule } from './modules/interview-chat/interview-chat.mod
 import { GatewayModule } from './gateway/gateway.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { HiringPipelineModule } from './modules/hiring-pipeline/hiring-pipeline.module';
+import './modules/queue/ai-analysis.worker';
 
 @Module({
   imports: [
