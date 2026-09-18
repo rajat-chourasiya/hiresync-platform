@@ -11,6 +11,7 @@ import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
+    rawBody: true,
   });
 
   app.useWebSocketAdapter(new IoAdapter(app)); 
