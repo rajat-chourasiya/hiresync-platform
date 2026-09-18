@@ -21,6 +21,7 @@ import { GatewayModule } from './gateway/gateway.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { HiringPipelineModule } from './modules/hiring-pipeline/hiring-pipeline.module';
 import './modules/queue/ai-analysis.worker';
+import { BillingModule } from './modules/billing/billing.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import './modules/queue/ai-analysis.worker';
     GatewayModule,
     HiringPipelineModule,
     FeedbackModule,
+    BillingModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
