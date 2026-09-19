@@ -16,7 +16,10 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(new IoAdapter(app)); 
   app.use(helmet());
-  app.enableCors();
+  app.enableCors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+});
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new SanitizeInterceptor());
