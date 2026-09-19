@@ -4,6 +4,7 @@ export const PLANS: Record<string, { monthly: number; yearly: number }> = {
   enterprise: { monthly: 9999, yearly: 99990 },
 };
 
+
 export function getPlanAmount(planId: string, cycle: string): number {
   const plan = PLANS[planId];
   if (!plan) throw new Error('Invalid plan');
