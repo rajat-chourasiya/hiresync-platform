@@ -22,6 +22,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { HiringPipelineModule } from './modules/hiring-pipeline/hiring-pipeline.module';
 import './modules/queue/ai-analysis.worker';
 import { BillingModule } from './modules/billing/billing.module';
+import { QuestionsModule } from './modules/questions/questions.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { BillingModule } from './modules/billing/billing.module';
     HiringPipelineModule,
     FeedbackModule,
     BillingModule,
+    QuestionsModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),

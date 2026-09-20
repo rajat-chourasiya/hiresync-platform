@@ -339,18 +339,23 @@ model AiResumeAnalysis {
 }
 
 model AiGeneratedQuestionSet {
-  id         String   @id @default(uuid())
-  orgId      String
-  jobId      String
-  role       String?
-  difficulty String?
-  roundType  String?
-  status     String   @default("draft")
-  questions  Json
-  createdAt  DateTime @default(now())
+  id              String   @id @default(uuid())
+  orgId           String
+  jobId           String
+  interviewId     String
+  candidateId     String
+  roundType       String
+  difficulty      String?
+  status          String   @default("draft")
+  questions       Json
+  interviewerNote String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
+  @@unique([interviewId, candidateId])
   @@index([orgId])
   @@index([jobId])
+  @@index([interviewId])
   @@map("ai_question_sets")
 }
 
