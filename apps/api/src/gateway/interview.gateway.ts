@@ -8,9 +8,14 @@ import * as jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { canAccessCandidateChannel, canAccessInterviewerChannel } from 'src/common/helpers/interview-access';
 import { resolveDisplayName } from 'src/common/helpers/resolve-display-name';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { buildCopilotPrompt } from 'src/modules/questions/prompts/interview-copilot.prompt';
+import { generateWithFallback } from 'src/common/helpers/gemini-fallback';
 
 
 const prisma = new PrismaClient();
+const geminiClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+const COPILOT_MODEL = process.env.GEMINI_MODEL_PRIMARY as string;
 
 interface SocketUser {
   id: string;
@@ -149,4 +154,51 @@ async handleCursorMove(@ConnectedSocket() socket: Socket, @MessageBody() data: {
     const room = socket.data.chatRoom as string;
     if (room) socket.to(room).emit('chat:read', { userId: user.id, at: new Date() });
   }
+
+  @SubscribeMessage('copilot:ask')
+async handleCopilotAsk(
+  @ConnectedSocket() socket: Socket,
+  @MessageBody() data: { interviewId: string; candidateId: string; question: string },
+) {
+  const user = socket.data.user as SocketUser;
+
+  const interview = await prisma.interview.findUnique({ where: { id: data.interviewId } });
+  if (!interview || interview.orgId !== user.orgId) {
+    return socket.emit('error', { message: 'Interview not found' });
+  }
+
+  const allowed = canAccessInterviewerChannel(user, interview);
+  if (!allowed) {
+    return socket.emit('error', { message: 'Copilot is only available to interviewers' });
+  }
+  if (!interview.candidateIds.includes(data.candidateId)) {
+    return socket.emit('error', { message: 'Candidate is not part of this interview' });
+  }
+
+  const analysis = await prisma.aiResumeAnalysis.findFirst({
+    where: { jobId: interview.jobId, candidateId: data.candidateId },
+    orderBy: { createdAt: 'desc' },
+  });
+  const job = await prisma.job.findUnique({ where: { id: interview.jobId } });
+
+  try {
+  const prompt = buildCopilotPrompt(
+    analysis?.fullAnalysis ?? {},
+    { title: job?.title ?? '', skills: job?.skills ?? [] },
+    interview.interviewType,
+    data.question,
+  );
+
+  const answer = await generateWithFallback(geminiClient, [prompt]);
+
+  socket.emit('copilot:response', { question: data.question, answer, at: new Date() });
+} catch (err) {
+  socket.emit('copilot:response', {
+    question: data.question,
+    answer: 'AI assistant is temporarily unavailable. Please try again.',
+    at: new Date(),
+    error: true,
+  });
+}
+}
 }
