@@ -32,14 +32,14 @@ export class StorageController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   @ApiConsumes('multipart/form-data')
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      file: { type: 'string', format: 'binary' },
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
     },
-  },
-})
+  })
 
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
@@ -52,6 +52,7 @@ export class StorageController {
       resourceType: result.resource_type,
       format: result.format,
       bytes: result.bytes,
+      resumeHash: result.resumeHash
     };
   }
 }
