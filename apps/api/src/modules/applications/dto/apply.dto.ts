@@ -19,6 +19,9 @@ export class ApplyDto {
   @IsUrl()
   resumeUrl!: string;
 
+  @IsString() 
+  resumeHash!: string;
+
   @IsString()
   @IsOptional()
   otp?: string;

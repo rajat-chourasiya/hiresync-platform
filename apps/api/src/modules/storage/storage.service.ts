@@ -1,6 +1,7 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { v2 as CloudinaryType, UploadApiResponse } from 'cloudinary';
 import * as streamifier from 'streamifier';
+import * as crypto from 'crypto';
 import { CLOUDINARY } from './cloudinary/cloudinary.provider';
 
 const ALLOWED_MIME = [
@@ -18,27 +19,26 @@ export class StorageService {
   constructor(@Inject(CLOUDINARY) private cloudinary: typeof CloudinaryType) {}
 
   
-  async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
-  if (!ALLOWED_MIME.includes(file.mimetype)) {
-    throw new BadRequestException('File type not allowed');
+  async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse & { resumeHash: string }> {
+    if (!ALLOWED_MIME.includes(file.mimetype)) {
+      throw new BadRequestException('File type not allowed');
+    }
+
+    const resumeHash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+
+    const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'auto';
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = this.cloudinary.uploader.upload_stream(
+        { folder: 'hiresync-uploads', resource_type: resourceType },
+        (error, result) => {
+          if (error) return reject(new Error(error.message || JSON.stringify(error)));
+          resolve({ ...(result as UploadApiResponse), resumeHash });
+        },
+      );
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    });
   }
-
-  const resourceType = file.mimetype === 'application/pdf' ? 'raw' : 'auto'; 
-
-  return new Promise((resolve, reject) => {
-    const uploadStream = this.cloudinary.uploader.upload_stream(
-      {
-        folder: 'hiresync-uploads',
-        resource_type: resourceType, 
-      },
-      (error, result) => {
-        if (error) return reject(new Error(error.message || JSON.stringify(error)));
-        resolve(result as UploadApiResponse);
-      },
-    );
-    streamifier.createReadStream(file.buffer).pipe(uploadStream);
-  });
-}
 
 
   generateSignedParams(orgId: string, candidateEmail: string) {
@@ -58,4 +58,6 @@ export class StorageService {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
   };
 }
+
+
 }
