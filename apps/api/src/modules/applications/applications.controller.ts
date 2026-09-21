@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ReviewApplicationDto } from './dto/review-application.dto';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
+import { ReleaseSuspiciousDto } from './dto/release-suspicious.dto';
 
 @Controller()
 export class ApplicationsController {
@@ -37,6 +38,14 @@ export class ApplicationsController {
     return this.applicationsService.listByJob(req.user.orgId, jobId);
   }
 
+  @Get('applications/suspicious')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('applications.view')
+  @ApiBearerAuth()
+  listSuspicious(@Req() req: any) {
+    return this.applicationsService.listSuspicious(req.user.orgId);
+  }
+
   // Recruiter-facing: single application with AI analysis (protected)
   @Get('applications/:id')
   @UseGuards(JwtAuthGuard)
@@ -60,5 +69,14 @@ export class ApplicationsController {
   review(@Req() req: any, @Param('id') id: string, @Body() dto: ReviewApplicationDto) {
     return this.applicationsService.review(req.user.orgId, id, dto);
   }
+
+  @Patch('applications/:id/release-suspicious')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('applications.review')
+  @ApiBearerAuth()
+  releaseSuspicious(@Req() req: any, @Param('id') id: string, @Body() dto: ReleaseSuspiciousDto) {
+    return this.applicationsService.releaseSuspiciousApplication(req.user.orgId, id, dto.decision as 'proceed' | 'reject');
+  }
+
 }
 

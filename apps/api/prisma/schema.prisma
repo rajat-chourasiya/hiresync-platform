@@ -109,6 +109,7 @@ model CandidateProfile {
   phone        String?
   skills       String[]
   resumeUrl    String?
+  resumeHash   String?
   createdAt    DateTime      @default(now())
   applications Application[]
 

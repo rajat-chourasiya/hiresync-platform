@@ -14,63 +14,101 @@ export class ApplicationsService {
   constructor(private prisma: PrismaService) { }
 
   async apply(orgId: string, jobSlug: string, dto: ApplyDto) {
-    const job = await this.prisma.job.findUnique({
-      where: { orgId_slug: { orgId, slug: jobSlug } },
-    });
-    if (!job || job.status !== 'published') {
-      throw new NotFoundException('Job not found or not accepting applications');
-    }
+  const job = await this.prisma.job.findUnique({ where: { orgId_slug: { orgId, slug: jobSlug } } });
+  if (!job || job.status !== 'published') {
+    throw new NotFoundException('Job not found or not accepting applications');
+  }
 
-    const expectedDomain = `res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`;
-    if (!dto.resumeUrl.includes(expectedDomain)) {
-      throw new BadRequestException('Invalid resume URL');
-    }
+  const expectedDomain = `res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`;
+  if (!dto.resumeUrl.includes(expectedDomain)) {
+    throw new BadRequestException('Invalid resume URL');
+  }
 
-    let candidate = await this.prisma.candidateProfile.findFirst({
-      where: { orgId, email: dto.email },
-    });
-    if (!candidate) {
-      candidate = await this.prisma.candidateProfile.create({
-        data: {
-          orgId,
-          name: dto.name,
-          email: dto.email,
-          phone: dto.phone,
-          skills: dto.skills ?? [],
-          resumeUrl: dto.resumeUrl,
-        },
-      });
-    } else {
-      candidate = await this.prisma.candidateProfile.update({
-        where: { id: candidate.id },
-        data: {
-          name: dto.name,
-          phone: dto.phone,
-          skills: dto.skills ?? [],
-          resumeUrl: dto.resumeUrl,
-        },
-      });
-    }
+  const duplicateResume = await this.prisma.candidateProfile.findFirst({
+    where: { orgId, resumeHash: dto.resumeHash, email: { not: dto.email } },
+  });
 
-    const existingApp = await this.prisma.application.findUnique({
-      where: { jobId_candidateId: { jobId: job.id, candidateId: candidate.id } },
-    });
-    if (existingApp) throw new ConflictException('You have already applied to this job');
-
-    const application = await this.prisma.application.create({
+  let candidate = await this.prisma.candidateProfile.findFirst({ where: { orgId, email: dto.email } });
+  if (!candidate) {
+    candidate = await this.prisma.candidateProfile.create({
       data: {
-        orgId,
-        jobId: job.id,
-        candidateId: candidate.id,
-        status: 'applied',
-        aiAnalysisStatus: 'queued',
+        orgId, name: dto.name, email: dto.email, phone: dto.phone,
+        skills: dto.skills ?? [], resumeUrl: dto.resumeUrl, resumeHash: dto.resumeHash,
       },
     });
-
-    await aiAnalysisQueue.add('analyze', { applicationId: application.id });
-
-    return application;
+  } else {
+    candidate = await this.prisma.candidateProfile.update({
+      where: { id: candidate.id },
+      data: { name: dto.name, phone: dto.phone, skills: dto.skills ?? [], resumeUrl: dto.resumeUrl, resumeHash: dto.resumeHash },
+    });
   }
+
+  const existingApp = await this.prisma.application.findUnique({
+    where: { jobId_candidateId: { jobId: job.id, candidateId: candidate.id } },
+  });
+  if (existingApp) throw new ConflictException('You have already applied to this job');
+
+  const initialStatus = duplicateResume ? 'suspicious_duplicate' : 'applied';
+  const initialAiStatus = duplicateResume ? 'on_hold' : 'queued';
+
+  const application = await this.prisma.application.create({
+    data: { orgId, jobId: job.id, candidateId: candidate.id, status: initialStatus, aiAnalysisStatus: initialAiStatus },
+  });
+
+  if (duplicateResume) {
+    await this.prisma.auditLog.create({
+      data: {
+        orgId,
+        action: 'candidate.duplicate_resume_flagged',
+        resourceType: 'Application',
+        resourceId: application.id,
+        metadata: { newEmail: dto.email, matchedCandidateId: duplicateResume.id, resumeHash: dto.resumeHash },
+      },
+    });
+  } else {
+    await aiAnalysisQueue.add('analyze', { applicationId: application.id });
+    // await this.emailService.sendApplicationConfirmation(dto.email, dto.name, job.title);
+  }
+
+  return application;
+}
+
+async releaseSuspiciousApplication(orgId: string, applicationId: string, decision: 'proceed' | 'reject') {
+  const application = await this.prisma.application.findFirst({ where: { id: applicationId, orgId } });
+  if (!application) throw new NotFoundException('Application not found');
+
+  if (application.status !== 'suspicious_duplicate') {
+    throw new BadRequestException('This application is not flagged as suspicious');
+  }
+
+  if (decision === 'proceed') {
+    const updated = await this.prisma.application.update({
+      where: { id: applicationId },
+      data: { status: 'applied', aiAnalysisStatus: 'queued' },
+    });
+    await aiAnalysisQueue.add('analyze', { applicationId });
+
+    const candidate = await this.prisma.candidateProfile.findUnique({ where: { id: application.candidateId } });
+    const job = await this.prisma.job.findUnique({ where: { id: application.jobId } });
+    if (candidate && job) {
+      // await this.emailService.sendApplicationConfirmation(candidate.email, candidate.name, job.title);
+    }
+    return updated;
+  } else {
+    return this.prisma.application.update({
+      where: { id: applicationId },
+      data: { status: 'rejected' },
+    });
+  }
+}
+
+  async listSuspicious(orgId: string) {
+  return this.prisma.application.findMany({
+    where: { orgId, status: 'suspicious_duplicate' },
+    include: { candidate: true, job: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
 
   async listByJob(orgId: string, jobId: string) {
   console.log('Service received orgId:', orgId, 'jobId:', jobId);
@@ -93,8 +131,6 @@ export class ApplicationsService {
       },
     });
   }
-
-
 
 
 async listByJobRanked(orgId: string, jobId: string) {
