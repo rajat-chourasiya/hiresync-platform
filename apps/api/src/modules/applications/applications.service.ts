@@ -3,7 +3,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { ApplyDto } from './dto/apply.dto';
 import { aiAnalysisQueue } from '../queue/ai-analysis.queue';
 import { ReviewApplicationDto } from './dto/review-application.dto';
-
+import { EmailService } from '../email/email.service';
 
 const LEVEL_WEIGHT: Record<string, number> = {
   FRESHER: 0, L1: 1, L2: 2, L3: 3, L4: 4, L5: 5, L6: 6,
@@ -11,7 +11,7 @@ const LEVEL_WEIGHT: Record<string, number> = {
 
 @Injectable()
 export class ApplicationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService, private emailService: EmailService) { }
 
   async apply(orgId: string, jobSlug: string, dto: ApplyDto) {
   const job = await this.prisma.job.findUnique({ where: { orgId_slug: { orgId, slug: jobSlug } } });
@@ -67,7 +67,7 @@ export class ApplicationsService {
     });
   } else {
     await aiAnalysisQueue.add('analyze', { applicationId: application.id });
-    // await this.emailService.sendApplicationConfirmation(dto.email, dto.name, job.title);
+    await this.emailService.sendApplicationConfirmation(dto.email, dto.name, job.title);
   }
 
   return application;
@@ -91,7 +91,7 @@ async releaseSuspiciousApplication(orgId: string, applicationId: string, decisio
     const candidate = await this.prisma.candidateProfile.findUnique({ where: { id: application.candidateId } });
     const job = await this.prisma.job.findUnique({ where: { id: application.jobId } });
     if (candidate && job) {
-      // await this.emailService.sendApplicationConfirmation(candidate.email, candidate.name, job.title);
+      await this.emailService.sendApplicationConfirmation(candidate.email, candidate.name, job.title);
     }
     return updated;
   } else {
