@@ -9,12 +9,13 @@ import {
   computeWeightedScore, mapTier,
 } from './constants/pipeline-criteria';
 import { ApproveHireDto } from './dto/approve-hire.dto';
+import { EmailService } from '../email/email.service';
 
 const GATE_THRESHOLD = 3.2;
 
 @Injectable()
 export class HiringPipelineService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private emailService: EmailService) {}
 
 
 
@@ -167,7 +168,6 @@ const evaluation = await this.prisma.recruiterEvaluation.create({
     if (!decision || decision.status !== 'ready') {
       throw new BadRequestException('Hiring decision is not ready for approval — manager evaluation must be completed first');
     }
-
     
 
     if (dto.action === 'approve') {
@@ -183,6 +183,11 @@ const evaluation = await this.prisma.recruiterEvaluation.create({
       });
       await this.prisma.application.update({ where: { id: applicationId }, data: { status: 'rejected' } });
     }
+
+    const candidate = await this.prisma.candidateProfile.findUnique({ where: { id: application.candidateId } });
+    const job = await this.prisma.job.findUnique({ where: { id: application.jobId } });
+    await this.emailService.sendOfferDecision(candidate!.email, candidate!.name, job!.title, dto.action === 'approve' ? 'hired' : 'rejected');
+
 
     return this.prisma.hiringDecision.findUnique({ where: { applicationId } });
   }
