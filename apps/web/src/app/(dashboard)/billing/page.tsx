@@ -54,7 +54,7 @@ export default function BillingPage() {
         'Content-Type': 'application/json',
 
         // Temporary testing:
-        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmOTA3ZjE1Zi0yNDM0LTRkMTctOTJjOC0yOWI1MWU3OTMwYjMiLCJvcmdJZCI6Ijk5NGI4NDM5LTI5YWEtNDI5Ny1iNWEyLTRjMjYwMTFiZTAyNSIsInJvbGUiOiJvcmdfYWRtaW4iLCJ0b2tlblZlcnNpb24iOjAsImlhdCI6MTc4OTc1NzkwMiwiZXhwIjoxNzg5NzYxNTAyfQ.PiTIQbR0LyjmESbUDyRPNC7Qi176i9ht2HB5P4_deYE`,
+        Authorization: `Bearer enter your admin token here`,
       },
 
       body: JSON.stringify({
@@ -80,7 +80,7 @@ export default function BillingPage() {
         'Content-Type': 'application/json',
 
         // Temporary testing:
-        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmOTA3ZjE1Zi0yNDM0LTRkMTctOTJjOC0yOWI1MWU3OTMwYjMiLCJvcmdJZCI6Ijk5NGI4NDM5LTI5YWEtNDI5Ny1iNWEyLTRjMjYwMTFiZTAyNSIsInJvbGUiOiJvcmdfYWRtaW4iLCJ0b2tlblZlcnNpb24iOjAsImlhdCI6MTc4OTc1NzkwMiwiZXhwIjoxNzg5NzYxNTAyfQ.PiTIQbR0LyjmESbUDyRPNC7Qi176i9ht2HB5P4_deYE`,
+        Authorization: `Bearer enter your admin token here`,
       },
 
       body: JSON.stringify({
