@@ -25,7 +25,7 @@ model User {
   id                    String       @id @default(uuid())
   orgId                 String
   email                 String       @unique
-  name                  String?
+  name                  String
   passwordHash          String
   role                  String
   tokenVersion          Int          @default(0)

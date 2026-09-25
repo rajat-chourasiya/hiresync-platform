@@ -4,7 +4,7 @@ import { RESEND } from './resend/resend.provider';
 import { paymentReceiptTemplate } from './templates/payment-receipt.template';
 import { offerDecisionTemplate } from './templates/offer-decision.template';
 import { interviewReminderTemplate } from './templates/interview-reminder.template';
-import { interviewInviteTemplate } from './templates/interview-invite.template';
+import { candidateInterviewInviteTemplate, interviewerAssignmentTemplate } from './templates/interview-invite.template';
 import { applicationConfirmationTemplate } from './templates/application-confirmation.template';
 
 @Injectable()
@@ -25,10 +25,15 @@ export class EmailService {
     return this.send(to, subject, html);
   }
 
-  async sendInterviewInvite(to: string, candidateName: string, jobTitle: string, scheduledStart: Date, joinUrl: string) {
-    const { subject, html } = interviewInviteTemplate(candidateName, jobTitle, scheduledStart, joinUrl);
-    return this.send(to, subject, html);
-  }
+  async sendCandidateInterviewInvite(to: string, candidateName: string, jobTitle: string, scheduledStart: Date, joinUrl: string) {
+  const { subject, html } = candidateInterviewInviteTemplate(candidateName, jobTitle, scheduledStart, joinUrl);
+  return this.send(to, subject, html);
+}
+
+async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: string, candidateName: string, scheduledStart: Date, joinUrl: string) {
+  const { subject, html } = interviewerAssignmentTemplate(interviewerName, jobTitle, candidateName, scheduledStart, joinUrl);
+  return this.send(to, subject, html);
+}
 
   async sendInterviewReminder(to: string, candidateName: string, jobTitle: string, joinUrl: string) {
     const { subject, html } = interviewReminderTemplate(candidateName, jobTitle, joinUrl);
