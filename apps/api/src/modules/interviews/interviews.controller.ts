@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, NotFoundException, ForbiddenException, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, NotFoundException, ForbiddenException, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { InterviewsService } from './interviews.service';
 import { ScheduleInterviewDto } from './dto/schedule-interview.dto';
@@ -83,5 +83,45 @@ export class InterviewsController {
   @ApiBearerAuth()
   updateTools(@Req() req: any, @Param('id') id: string, @Body('enabledTools') tools: string[]) {
     return this.interviewsService.updateTools(req.user.orgId, id, tools);
+}
+
+@Get('join/candidate')
+async joinViaCandidateLink(
+  @Query('token') token: string,
+  @Query('interviewId') interviewId: string,
+  @Query('candidateId') candidateId: string,
+  @Query('expires') expires: string,
+) {
+  const { interviewId: verifiedInterviewId, candidateId: verifiedCandidateId } =
+    await this.interviewsService.verifyCandidateMagicLink(interviewId, candidateId, token, expires);
+
+  const interview = await this.interviewsService.findOneUnscoped(verifiedInterviewId); 
+  if (!interview) throw new NotFoundException('Interview not found');
+
+  const memberIds = Array.from(new Set([verifiedCandidateId, ...interview.interviewerIds]));
+  await this.videoService.createCall(interview.roomId, verifiedCandidateId, memberIds);
+  const streamToken = this.videoService.generateUserToken(verifiedCandidateId);
+
+  return { roomId: interview.roomId, token: streamToken, apiKey: process.env.STREAM_API_KEY };
+}
+
+@Get('join/staff')
+async joinViaInterviewerLink(
+  @Query('token') token: string,
+  @Query('interviewId') interviewId: string,
+  @Query('interviewerId') interviewerId: string,
+  @Query('expires') expires: string,
+) {
+  const { interviewId: verifiedInterviewId, interviewerId: verifiedInterviewerId } =
+    await this.interviewsService.verifyInterviewerMagicLink(interviewId, interviewerId, token, expires);
+
+  const interview = await this.interviewsService.findOneUnscoped(verifiedInterviewId); // fix
+  if (!interview) throw new NotFoundException('Interview not found');
+
+  const memberIds = Array.from(new Set([verifiedInterviewerId, ...interview.interviewerIds]));
+  await this.videoService.createCall(interview.roomId, verifiedInterviewerId, memberIds);
+  const streamToken = this.videoService.generateUserToken(verifiedInterviewerId);
+
+  return { roomId: interview.roomId, token: streamToken, apiKey: process.env.STREAM_API_KEY };
 }
 }
