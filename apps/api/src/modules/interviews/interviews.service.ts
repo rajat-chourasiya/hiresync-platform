@@ -77,11 +77,12 @@ async schedule(orgId: string, dto: ScheduleInterviewDto) {
 
 
   const interviewers = await this.prisma.user.findMany({ where: { id: { in: dto.interviewerIds } } });
-  for (const interviewer of interviewers) {
+for (const interviewer of interviewers) {
   const magicLink = await this.generateInterviewerMagicLink(interview.id, interviewer.id);
+  const questionsLink = await this.generateQuestionsReviewLink(interview.id, interviewer.id, uniqueApplications[0].candidateId);
   const candidateNames = uniqueApplications.map((a) => a.candidate.name).join(', ');
   await this.emailService.sendInterviewerAssignment(
-    interviewer.email, interviewer.name ?? interviewer.email, job.title, candidateNames, start, magicLink,
+    interviewer.email, interviewer.name ?? interviewer.email, job.title, candidateNames, start, magicLink, questionsLink,
   );
 }
 
@@ -198,6 +199,15 @@ async verifyInterviewerMagicLink(interviewId: string, interviewerId: string, raw
   }
 
   return { interviewId, interviewerId };
+}
+
+async generateQuestionsReviewLink(interviewId: string, interviewerId: string, candidateId: string) {
+  const secret = process.env.INTERVIEW_TOKEN_SECRET as string;
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const payload = `staff:${interviewId}:${interviewerId}:${expiresAt.getTime()}`;
+  const rawToken = this.signToken(payload, secret);
+
+  return `${process.env.APP_URL}/interview/questions/review?token=${rawToken}&interviewId=${interviewId}&interviewerId=${interviewerId}&candidateId=${candidateId}&expires=${expiresAt.getTime()}`;
 }
   
 }

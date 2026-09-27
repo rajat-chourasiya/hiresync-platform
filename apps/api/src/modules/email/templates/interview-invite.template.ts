@@ -19,11 +19,8 @@ export function candidateInterviewInviteTemplate(
 }
 
 export function interviewerAssignmentTemplate(
-  interviewerName: string,
-  jobTitle: string,
-  candidateName: string,
-  scheduledStart: Date,
-  joinUrl: string,
+  interviewerName: string, jobTitle: string, candidateName: string,
+  scheduledStart: Date, joinUrl: string, questionsUrl: string,
 ) {
   return {
     subject: `Interview Assigned - ${jobTitle}`,
@@ -33,7 +30,7 @@ export function interviewerAssignmentTemplate(
         <p>Hi ${interviewerName},</p>
         <p>You are scheduled to interview <strong>${candidateName}</strong> for <strong>${jobTitle}</strong> on:</p>
         <p><strong>${scheduledStart.toUTCString()}</strong></p>
-        <p>Please review the AI-generated questions before the interview.</p>
+        <p><a href="${questionsUrl}" style="background:#D97706;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Review Questions</a></p>
         <p><a href="${joinUrl}" style="background:#1D4ED8;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Join Interview</a></p>
         <p>Best,<br/>HireSync Team</p>
       </div>`,

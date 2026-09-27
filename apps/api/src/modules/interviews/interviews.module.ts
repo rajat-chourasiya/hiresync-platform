@@ -9,5 +9,6 @@ import { EmailModule } from '../email/email.module';
   imports: [VideoModule, EmailModule],
   controllers: [InterviewsController],
   providers: [InterviewsService],
+  exports: [InterviewsService]
 })
 export class InterviewsModule {}
