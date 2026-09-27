@@ -100,6 +100,7 @@ export class AuthService {
         data: {
           orgId: org.id,
           email: dto.email,
+          name: dto.name,
           passwordHash,
           role: 'org_admin',
         },
