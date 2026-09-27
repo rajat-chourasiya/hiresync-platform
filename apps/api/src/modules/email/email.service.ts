@@ -30,8 +30,8 @@ export class EmailService {
   return this.send(to, subject, html);
 }
 
-async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: string, candidateName: string, scheduledStart: Date, joinUrl: string) {
-  const { subject, html } = interviewerAssignmentTemplate(interviewerName, jobTitle, candidateName, scheduledStart, joinUrl);
+async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: string, candidateName: string, scheduledStart: Date, joinUrl: string, questionsUrl: string) {
+  const { subject, html } = interviewerAssignmentTemplate(interviewerName, jobTitle, candidateName, scheduledStart, joinUrl, questionsUrl);
   return this.send(to, subject, html);
 }
 
