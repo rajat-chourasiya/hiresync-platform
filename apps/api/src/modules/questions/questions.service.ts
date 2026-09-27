@@ -71,6 +71,14 @@ export class QuestionsService {
     return set;
   }
 
+  async findOneUnscoped(interviewId: string, candidateId: string) {
+  const set = await this.prisma.aiGeneratedQuestionSet.findUnique({
+    where: { interviewId_candidateId: { interviewId, candidateId } },
+  });
+  if (!set) throw new NotFoundException('No question set found for this candidate');
+  return set;
+}
+
   async findAllForInterview(orgId: string, interviewId: string, userId: string, role: string) {
     await this.authorizeStaff(orgId, interviewId, userId, role);
     return this.prisma.aiGeneratedQuestionSet.findMany({ where: { interviewId } });
