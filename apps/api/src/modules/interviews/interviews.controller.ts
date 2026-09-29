@@ -7,6 +7,8 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { CandidateAuthGuard } from '../../common/guards/candidate-auth.guard';
 import { VideoService } from '../video/video.service';
+import { RescheduleInterviewDto } from './dto/reschedule-interview.dto';
+import { CancelInterviewDto } from './dto/cancel-interview.dto';
 
 @Controller('interviews')
 export class InterviewsController {
@@ -124,4 +126,20 @@ async joinViaInterviewerLink(
 
   return { roomId: interview.roomId, token: streamToken, apiKey: process.env.STREAM_API_KEY };
 }
+
+  @Patch(':id/reschedule')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('interviews.schedule')
+  @ApiBearerAuth()
+  reschedule(@Req() req: any, @Param('id') id: string, @Body() dto: RescheduleInterviewDto) {
+    return this.interviewsService.reschedule(req.user.orgId, id, dto);
+  }
+
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('interviews.schedule')
+  @ApiBearerAuth()
+  cancel(@Req() req: any, @Param('id') id: string, @Body() dto: CancelInterviewDto) {
+    return this.interviewsService.cancel(req.user.orgId, id, dto);
+  }
 }
