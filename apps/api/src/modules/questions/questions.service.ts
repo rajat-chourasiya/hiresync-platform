@@ -70,7 +70,7 @@ export class QuestionsService {
     if (!set) throw new NotFoundException('No question set found for this candidate');
     return set;
   }
-
+  
   async findOneUnscoped(interviewId: string, candidateId: string) {
   const set = await this.prisma.aiGeneratedQuestionSet.findUnique({
     where: { interviewId_candidateId: { interviewId, candidateId } },

@@ -3,6 +3,8 @@ import { PrismaService } from '../../database/prisma.service';
 import { ScheduleInterviewDto, VALID_TOOLS } from './dto/schedule-interview.dto';
 import * as crypto from 'crypto';
 import { EmailService } from '../email/email.service';
+import { RescheduleInterviewDto } from './dto/reschedule-interview.dto';
+import { CancelInterviewDto } from './dto/cancel-interview.dto';
 
 @Injectable()
 export class InterviewsService {
@@ -208,6 +210,87 @@ async generateQuestionsReviewLink(interviewId: string, interviewerId: string, ca
   const rawToken = this.signToken(payload, secret);
 
   return `${process.env.APP_URL}/interview/questions/review?token=${rawToken}&interviewId=${interviewId}&interviewerId=${interviewerId}&candidateId=${candidateId}&expires=${expiresAt.getTime()}`;
+}
+
+async reschedule(orgId: string, interviewId: string, dto: RescheduleInterviewDto) {
+  const interview = await this.prisma.interview.findFirst({ where: { id: interviewId, orgId } });
+  if (!interview) throw new NotFoundException('Interview not found');
+  if (interview.status === 'completed' || interview.status === 'cancelled') {
+    throw new BadRequestException(`Cannot reschedule an interview with status "${interview.status}"`);
+  }
+
+  const newStart = new Date(dto.newScheduledStart);
+  const newEnd = new Date(dto.newScheduledEnd);
+  if (newEnd <= newStart) throw new BadRequestException('newScheduledEnd must be after newScheduledStart');
+
+ 
+  const conflicts = await this.prisma.interview.findMany({
+    where: {
+      orgId,
+      id: { not: interviewId },
+      interviewerIds: { hasSome: interview.interviewerIds },
+      scheduledStart: { lt: newEnd },
+      scheduledEnd: { gt: newStart },
+    },
+  });
+  if (conflicts.length > 0) throw new ConflictException('One or more interviewers have a conflict at the new time');
+
+
+  await this.prisma.interviewAccessToken.updateMany({
+    where: { interviewId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
+  const updated = await this.prisma.interview.update({
+    where: { id: interviewId },
+    data: { scheduledStart: newStart, scheduledEnd: newEnd, status: 'scheduled' },
+  });
+
+  // Naye magic-links generate + re-notify
+  const job = await this.prisma.job.findUnique({ where: { id: interview.jobId } });
+  const candidates = await this.prisma.candidateProfile.findMany({ where: { id: { in: interview.candidateIds } } });
+  const interviewers = await this.prisma.user.findMany({ where: { id: { in: interview.interviewerIds } } });
+
+  for (const candidate of candidates) {
+    const magicLink = await this.generateCandidateMagicLink(interviewId, candidate.id);
+    await this.emailService.sendCandidateInterviewInvite(candidate.email, candidate.name, job?.title ?? '', newStart, magicLink);
+  }
+  for (const interviewer of interviewers) {
+    const magicLink = await this.generateInterviewerMagicLink(interviewId, interviewer.id);
+    const questionsLink = await this.generateQuestionsReviewLink(interviewId, interviewer.id, interview.candidateIds[0]);
+    const candidateNames = candidates.map((c) => c.name).join(', ');
+    await this.emailService.sendInterviewerAssignment(
+      interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', candidateNames, newStart, magicLink, questionsLink,
+    );
+  }
+
+  return updated;
+}
+
+async cancel(orgId: string, interviewId: string, dto: CancelInterviewDto) {
+  const interview = await this.prisma.interview.findFirst({ where: { id: interviewId, orgId } });
+  if (!interview) throw new NotFoundException('Interview not found');
+  if (interview.status === 'completed' || interview.status === 'cancelled') {
+    throw new BadRequestException(`Interview is already "${interview.status}"`);
+  }
+
+  await this.prisma.interviewAccessToken.updateMany({
+    where: { interviewId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
+  const updated = await this.prisma.interview.update({
+    where: { id: interviewId },
+    data: { status: 'cancelled' },
+  });
+
+
+  await this.prisma.application.updateMany({
+    where: { orgId, candidateId: { in: interview.candidateIds }, jobId: interview.jobId, status: 'interview_scheduled' },
+    data: { status: 'shortlisted' },
+  });
+
+  return updated;
 }
   
 }
