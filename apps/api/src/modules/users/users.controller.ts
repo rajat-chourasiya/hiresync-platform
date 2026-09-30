@@ -1,20 +1,20 @@
-import { Controller, Post, Get, Body, UseGuards, Req, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Post()
-  @Roles('org_admin')
+  @RequirePermission('users.create')
   create(@Req() req: any, @Body() dto: CreateUserDto) {
     return this.usersService.create(req.user.orgId, dto);
   }
@@ -25,8 +25,8 @@ export class UsersController {
   }
 
   @Patch(':id')
-@Roles('recruiter', 'org_admin')
-update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateUserDto) {
-  return this.usersService.update(req.user.orgId, id, dto);
-}
+  @RequirePermission('users.update')
+  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(req.user.orgId, id, dto);
+  }
 }
