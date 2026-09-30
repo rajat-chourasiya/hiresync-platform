@@ -246,22 +246,22 @@ async reschedule(orgId: string, interviewId: string, dto: RescheduleInterviewDto
     data: { scheduledStart: newStart, scheduledEnd: newEnd, status: 'scheduled' },
   });
 
-  // Naye magic-links generate + re-notify
+
   const job = await this.prisma.job.findUnique({ where: { id: interview.jobId } });
   const candidates = await this.prisma.candidateProfile.findMany({ where: { id: { in: interview.candidateIds } } });
   const interviewers = await this.prisma.user.findMany({ where: { id: { in: interview.interviewerIds } } });
 
   for (const candidate of candidates) {
-    const magicLink = await this.generateCandidateMagicLink(interviewId, candidate.id);
-    await this.emailService.sendCandidateInterviewInvite(candidate.email, candidate.name, job?.title ?? '', newStart, magicLink);
-  }
-  for (const interviewer of interviewers) {
-    const magicLink = await this.generateInterviewerMagicLink(interviewId, interviewer.id);
-    const questionsLink = await this.generateQuestionsReviewLink(interviewId, interviewer.id, interview.candidateIds[0]);
-    const candidateNames = candidates.map((c) => c.name).join(', ');
-    await this.emailService.sendInterviewerAssignment(
-      interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', candidateNames, newStart, magicLink, questionsLink,
-    );
+  const magicLink = await this.generateCandidateMagicLink(interviewId, candidate.id);
+  await this.emailService.sendCandidateReschedule(candidate.email, candidate.name, job?.title ?? '', newStart, magicLink);
+}
+for (const interviewer of interviewers) {
+  const magicLink = await this.generateInterviewerMagicLink(interviewId, interviewer.id);
+  const questionsLink = await this.generateQuestionsReviewLink(interviewId, interviewer.id, interview.candidateIds[0]);
+  const candidateNames = candidates.map((c) => c.name).join(', ');
+  await this.emailService.sendInterviewerReschedule(
+    interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', candidateNames, newStart, magicLink, questionsLink,
+  );
   }
 
   return updated;
@@ -279,16 +279,23 @@ async cancel(orgId: string, interviewId: string, dto: CancelInterviewDto) {
     data: { revokedAt: new Date() },
   });
 
-  const updated = await this.prisma.interview.update({
-    where: { id: interviewId },
-    data: { status: 'cancelled' },
-  });
-
+  const updated = await this.prisma.interview.update({ where: { id: interviewId }, data: { status: 'cancelled' } });
 
   await this.prisma.application.updateMany({
     where: { orgId, candidateId: { in: interview.candidateIds }, jobId: interview.jobId, status: 'interview_scheduled' },
     data: { status: 'shortlisted' },
   });
+
+  const job = await this.prisma.job.findUnique({ where: { id: interview.jobId } });
+  const candidates = await this.prisma.candidateProfile.findMany({ where: { id: { in: interview.candidateIds } } });
+  const interviewers = await this.prisma.user.findMany({ where: { id: { in: interview.interviewerIds } } });
+
+  for (const candidate of candidates) {
+    await this.emailService.sendInterviewCancellation(candidate.email, candidate.name, job?.title ?? '', dto.reason);
+  }
+  for (const interviewer of interviewers) {
+    await this.emailService.sendInterviewCancellation(interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', dto.reason);
+  }
 
   return updated;
 }

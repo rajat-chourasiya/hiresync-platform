@@ -6,7 +6,8 @@ import { offerDecisionTemplate } from './templates/offer-decision.template';
 import { interviewReminderTemplate } from './templates/interview-reminder.template';
 import { candidateInterviewInviteTemplate, interviewerAssignmentTemplate } from './templates/interview-invite.template';
 import { applicationConfirmationTemplate } from './templates/application-confirmation.template';
-
+import { candidateRescheduleTemplate, interviewerRescheduleTemplate } from './templates/interview-reschedule.template';
+import { interviewCancelTemplate } from './templates/interview-cancel.template';
 @Injectable()
 export class EmailService {
   constructor(
@@ -39,6 +40,21 @@ async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: s
     const { subject, html } = interviewReminderTemplate(candidateName, jobTitle, joinUrl);
     return this.send(to, subject, html);
   }
+
+  async sendCandidateReschedule(to: string, candidateName: string, jobTitle: string, newStart: Date, joinUrl: string) {
+  const { subject, html } = candidateRescheduleTemplate(candidateName, jobTitle, newStart, joinUrl);
+  return this.send(to, subject, html);
+}
+
+async sendInterviewerReschedule(to: string, interviewerName: string, jobTitle: string, candidateName: string, newStart: Date, joinUrl: string, questionsUrl: string) {
+  const { subject, html } = interviewerRescheduleTemplate(interviewerName, jobTitle, candidateName, newStart, joinUrl, questionsUrl);
+  return this.send(to, subject, html);
+}
+
+async sendInterviewCancellation(to: string, recipientName: string, jobTitle: string, reason?: string) {
+  const { subject, html } = interviewCancelTemplate(recipientName, jobTitle, reason);
+  return this.send(to, subject, html);
+}
 
   async sendOfferDecision(to: string, candidateName: string, jobTitle: string, status: 'hired' | 'rejected') {
     const { subject, html } = offerDecisionTemplate(candidateName, jobTitle, status);
