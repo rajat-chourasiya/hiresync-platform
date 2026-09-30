@@ -1,7 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -24,10 +25,24 @@ export class UsersService {
     });
   }
 
+
   async findAll(orgId: string) {
     return this.prisma.user.findMany({
       where: { orgId },
       select: { id: true, email: true, role: true, createdAt: true },
     });
   }
+
+  async update(orgId: string, userId: string, dto: UpdateUserDto) {
+  const user = await this.prisma.user.findFirst({ where: { id: userId, orgId } });
+  if (!user) throw new NotFoundException('User not found');
+
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(dto.name ? { name: dto.name } : {}),
+      ...(dto.role ? { role: dto.role } : {}),
+    },
+  });
+}
 }
