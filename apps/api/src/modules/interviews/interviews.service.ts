@@ -45,7 +45,7 @@ async schedule(orgId: string, dto: ScheduleInterviewDto) {
   if (end <= start) throw new BadRequestException('scheduledEnd must be after scheduledStart');
 
   const conflicts = await this.prisma.interview.findMany({
-    where: { orgId, interviewerIds: { hasSome: dto.interviewerIds }, scheduledStart: { lt: end }, scheduledEnd: { gt: start } },
+    where: { orgId, interviewerIds: { hasSome: dto.interviewerIds }, status: { notIn: ['cancelled'] }, scheduledStart: { lt: end }, scheduledEnd: { gt: start } },
   });
   if (conflicts.length > 0) throw new ConflictException('One or more interviewers have a scheduling conflict');
 
@@ -229,6 +229,7 @@ async reschedule(orgId: string, interviewId: string, dto: RescheduleInterviewDto
       orgId,
       id: { not: interviewId },
       interviewerIds: { hasSome: interview.interviewerIds },
+      status: { notIn: ['cancelled'] },
       scheduledStart: { lt: newEnd },
       scheduledEnd: { gt: newStart },
     },
