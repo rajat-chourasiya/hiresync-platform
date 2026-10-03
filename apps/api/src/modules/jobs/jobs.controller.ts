@@ -33,4 +33,10 @@ export class JobsController {
   publish(@Req() req: any, @Param('id') id: string) {
     return this.jobsService.publish(req.user.orgId, id);
   }
+
+  @Post(':id/generate-description')
+  @RequirePermission('jobs.create')
+  generateDescription(@Req() req: any, @Param('id') id: string, @Body() outputSettings: any) {
+    return this.jobsService.generateDescription(req.user.orgId, id, outputSettings);
+  }
 }
