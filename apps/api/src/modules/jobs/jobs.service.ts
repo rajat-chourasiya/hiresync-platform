@@ -1,10 +1,12 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { slugify } from '../../common/helpers/slugify';
 import { buildJobDescriptionPrompt } from './prompts/job-description-generator.prompt';
 import { GeminiService } from '../ai/providers/gemini.service';
 import { JobValidationService } from './validators/job-validation.service';
+import { GenerateJobDescriptionDto } from './dto/generate-job-description.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class JobsService {
@@ -83,15 +85,12 @@ async create(orgId: string, dto: CreateJobDto) {
       data: { status: 'published' },
     });
   }
-
-  async generateDescription(orgId: string, jobId: string, outputSettings: {
-  tone?: string; targetLength?: string; maxCharacters?: number;
-  includeEmojis?: boolean; includeHashtags?: boolean;
-}) {
+async generateDescription(orgId: string, jobId: string, outputSettings: GenerateJobDescriptionDto) {
   const job = await this.prisma.job.findFirst({ where: { id: jobId, orgId } });
   if (!job) throw new NotFoundException('Job not found');
 
   const settings = {
+    platform: outputSettings.platform ?? 'job_board',
     tone: outputSettings.tone ?? 'neutral',
     targetLength: outputSettings.targetLength ?? 'standard',
     maxCharacters: outputSettings.maxCharacters,
@@ -100,14 +99,36 @@ async create(orgId: string, dto: CreateJobDto) {
   };
 
   const prompt = buildJobDescriptionPrompt(job, settings);
-  let generated = await this.gemini.generate(prompt);
+  let raw = await this.gemini.generate(prompt);
+  let parsed = this.parseGeneratedJson(raw);
 
-  if (settings.maxCharacters && generated.length > settings.maxCharacters) {
-    const regenPrompt = `${prompt}\n\nThe previous output exceeded ${settings.maxCharacters} characters. Regenerate a SHORTER version that fits within ${settings.maxCharacters} characters while preserving all essential facts and eligibility restrictions.`;
-    generated = await this.gemini.generate(regenPrompt);
+  if (settings.maxCharacters) {
+    const currentLength = JSON.stringify(parsed).length;
+    if (currentLength > settings.maxCharacters) {
+      const regenPrompt = `${prompt}\n\nThe previous output was too long. Regenerate a SHORTER version so the total content fits comfortably within ${settings.maxCharacters} characters, while preserving all essential facts and eligibility restrictions.`;
+      raw = await this.gemini.generate(regenPrompt);
+      parsed = this.parseGeneratedJson(raw);
+    }
   }
 
-  await this.prisma.job.update({ where: { id: jobId }, data: { description: generated } });
-  return { description: generated };
+  await this.prisma.job.update({ where: { id: jobId }, data: { generatedPost: parsed } });
+  return parsed;
+}
+
+private parseGeneratedJson(raw: string): Prisma.InputJsonObject {
+  const cleaned = raw.replace(/```json|```/g, '').trim();
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new BadRequestException('AI returned invalid JSON — please try generating again');
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new BadRequestException('AI returned invalid JSON — please try generating again');
+  }
+
+  return parsed as Prisma.InputJsonObject;
 }
 }

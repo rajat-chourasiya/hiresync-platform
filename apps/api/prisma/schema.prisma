@@ -86,20 +86,21 @@ model Job {
   orgId       String
   title       String
   slug        String
-  description String?       
+  description String? 
+  generatedPost Json?      
 
   // Basic Info
-  roleCategory      String?
-  jobLevel          String?
-  employmentType    String
-  workMode          String
-  location          String?
-  remoteEligibleLocations String[]
-  hybridDaysPerWeek Int?
-  workingHours      String?
-  department        String?
-  numOpenings       Int?
-  engagementDuration String?
+  roleCategory            String?
+  jobLevel                String?
+  employmentType          String  @default("full_time")
+  workMode                String  @default("onsite")
+  location                String?
+  remoteEligibleLocations String[] @default([])
+  hybridDaysPerWeek       Int?
+  workingHours            String?
+  department              String?
+  numOpenings             Int?
+  engagementDuration      String?
 
   // Experience
   experienceRequirement String   @default("not_required")
@@ -110,23 +111,23 @@ model Job {
   experienceArea        String?
 
   // Skills & Requirements
-  skills             String[]  // mustHaveSkills — existing field reused
-  requiredTechStack  String[]
-  preferredSkills    String[]
-  domain             String?
+  skills            String[] @default([])
+  requiredTechStack String[] @default([])
+  preferredSkills   String[] @default([])
+  domain            String?
 
   // Education
   educationRequirement String? @default("not_required")
-  requiredDegree        String?
-  requiredField          String?
+  requiredDegree       String?
+  requiredField        String?
 
   // Role Content
-  keyResponsibilities String[]
+  keyResponsibilities String[] @default([])
 
   // Company & Culture
   companyDescription String?
   companyStage       String?
-  culturePerks       String[]
+  culturePerks       String[] @default([])
   whyJoin            String?
 
   // Compensation & Logistics — never sent to AI

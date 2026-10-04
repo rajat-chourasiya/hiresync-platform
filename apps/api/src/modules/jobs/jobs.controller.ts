@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RequirePermission } from 'src/common/decorators/require-permission.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
+import { GenerateJobDescriptionDto } from './dto/generate-job-description.dto';
 
 @Controller('jobs')
 @UseGuards(JwtAuthGuard , PermissionsGuard)
@@ -35,8 +36,16 @@ export class JobsController {
   }
 
   @Post(':id/generate-description')
-  @RequirePermission('jobs.create')
-  generateDescription(@Req() req: any, @Param('id') id: string, @Body() outputSettings: any) {
-    return this.jobsService.generateDescription(req.user.orgId, id, outputSettings);
-  }
+@RequirePermission('jobs.create')
+generateDescription(
+  @Req() req: any,
+  @Param('id') id: string,
+  @Body() outputSettings: GenerateJobDescriptionDto,
+) {
+  return this.jobsService.generateDescription(
+    req.user.orgId,
+    id,
+    outputSettings,
+  );
+}
 }
