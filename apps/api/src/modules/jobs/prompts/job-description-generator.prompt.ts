@@ -44,7 +44,10 @@ If emojis disabled: set every "icon" to "".
 CONTENT RULES:
 1. TITLE — use actual job title only.
 2. OPENING — concise 1-2 sentence, professional, no unsupported claims.
-3. META — only supplied info; empty string "" for unavailable values. Never invent company/location/hours.
+3. META — - Use only information available in the job data.
+- Use the provided companyName field exactly for meta.company — never invent, translate, or alter it.
+- Do not invent company names, locations, working hours, or employment details.
+- If a value is unavailable, use an empty string "".
 4. ABOUT THE ROLE — what + why, concise. No invented products/customers/funding/team-size/tech.
 5. RESPONSIBILITIES — action-verb bullets, only from supplied data.
 6. REQUIRED SKILLS — only must-have skills, no additions.
@@ -66,18 +69,97 @@ LENGTH: short=concise, 2-4 responsibilities, 4-6 skills. standard=balanced, 4-7 
 
 FINAL VALIDATION: valid JSON, double-quoted keys, no trailing commas, no Markdown/fences, no unsupported claims, no duplicate skills between required/preferred, no salary unless permitted, no invented info. Return ONLY the JSON object.`;
 
-export function buildJobDescriptionPrompt(job: Record<string, unknown>, outputSettings: Record<string, unknown>): string {
+export function buildJobDescriptionPrompt(
+  job: Record<string, unknown>,
+  companyName: string,
+  outputSettings: Record<string, unknown>,
+): string {
   const {
-    id, orgId, slug, status, createdAt, updatedAt, applications, generatedPost,
+    id, orgId, slug, status, createdAt, updatedAt, applications, generatedPost, descriptionSettings,
+    showSalary, salaryMin, salaryMax, salaryCurrency, salaryPeriod, salaryBasis,
+    ...safeJobData
+  } = job as any;
+
+  const charInstruction = outputSettings.maxCharacters
+    ? `\nSTRICT CHARACTER LIMIT: the combined visible text (title + opening + all section titles/content/items + hashtags) MUST NOT exceed ${outputSettings.maxCharacters} characters. Trim content to fit, preserving essential facts.`
+    : '';
+
+  return `${JOB_DESCRIPTION_SYSTEM_PROMPT}
+${charInstruction}
+
+OUTPUT_SETTINGS:
+${JSON.stringify(outputSettings)}
+
+JOB_DATA (companyName is verified — use it exactly for meta.company):
+${JSON.stringify({ ...safeJobData, companyName })}`;
+}
+
+export function buildJobDescriptionEditPrompt(
+  currentPost: unknown,
+  job: Record<string, unknown>,
+  companyName: string,
+  instruction: string,
+  outputSettings: Record<string, unknown>,
+): string {
+  const {
+    id, orgId, slug, status, createdAt, updatedAt, applications, generatedPost, descriptionSettings,
     showSalary, salaryMin, salaryMax, salaryCurrency, salaryPeriod, salaryBasis,
     ...safeJobData
   } = job as any;
 
   return `${JOB_DESCRIPTION_SYSTEM_PROMPT}
 
+You are EDITING an existing generated job post, not creating a new one.
+
+RULES FOR THIS EDIT:
+- Apply ONLY the requested instruction below.
+- Do not invent new facts, skills, requirements, benefits, or company information not present in JOB_DATA.
+- Never reintroduce salary information.
+- Preserve the platform/tone/emoji/character-limit settings exactly unless the instruction explicitly asks to change them.
+- Return the FULL updated JSON object in the exact same schema — not a diff.
+
+CURRENT_GENERATED_POST:
+${JSON.stringify(currentPost)}
+
+JOB_DATA (source of truth, companyName verified):
+${JSON.stringify({ ...safeJobData, companyName })}
+
 OUTPUT_SETTINGS:
 ${JSON.stringify(outputSettings)}
 
-JOB_DATA:
-${JSON.stringify(safeJobData)}`;
+EDIT_INSTRUCTION:
+${instruction}`;
+}
+
+export function buildRegenerateSectionsPrompt(
+  currentPost: unknown,
+  job: Record<string, unknown>,
+  companyName: string,
+  outputSettings: Record<string, unknown>,
+  sectionTypesToRegenerate: string[],
+): string {
+  const {
+    id, orgId, slug, status, createdAt, updatedAt, applications, generatedPost, descriptionSettings,
+    showSalary, salaryMin, salaryMax, salaryCurrency, salaryPeriod, salaryBasis,
+    ...safeJobData
+  } = job as any;
+
+  return `${JOB_DESCRIPTION_SYSTEM_PROMPT}
+
+You are regenerating ONLY specific sections, leaving everything else untouched.
+
+RULES:
+- Regenerate ONLY sections whose "type" is in: ${JSON.stringify(sectionTypesToRegenerate)}.
+- Copy all other fields (title, opening, meta, non-listed sections, hashtags) EXACTLY unchanged.
+- Do not invent new facts. Never reintroduce salary.
+- Return the FULL JSON object, same schema, only requested sections updated.
+
+CURRENT_GENERATED_POST:
+${JSON.stringify(currentPost)}
+
+JOB_DATA (source of truth, companyName verified):
+${JSON.stringify({ ...safeJobData, companyName })}
+
+OUTPUT_SETTINGS:
+${JSON.stringify(outputSettings)}`;
 }
