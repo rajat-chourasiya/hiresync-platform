@@ -1,6 +1,66 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateJobDto } from '../dto/create-job.dto';
 
+
+interface Section {
+  type: string;
+  icon: string;
+  title: string;
+  content?: string;
+  items?: string[];
+}
+
+export interface GeneratedPost {
+  title: string;
+  opening: string;
+  meta: { company: string; location: string; employmentType: string; workMode: string; workingHours: string };
+  sections: Section[];
+  hashtags: string[];
+}
+
+export function validateGeneratedPost(data: unknown): GeneratedPost {
+  if (!data || typeof data !== 'object') throw new BadRequestException('Generated post must be an object');
+  const post = data as any;
+
+  if (typeof post.title !== 'string') throw new BadRequestException('title must be a string');
+  if (typeof post.opening !== 'string') throw new BadRequestException('opening must be a string');
+
+  if (!post.meta || typeof post.meta !== 'object') throw new BadRequestException('meta must be an object');
+  for (const key of ['company', 'location', 'employmentType', 'workMode', 'workingHours']) {
+    if (typeof post.meta[key] !== 'string') throw new BadRequestException(`meta.${key} must be a string`);
+  }
+
+  if (!Array.isArray(post.sections)) throw new BadRequestException('sections must be an array');
+  post.sections.forEach((section: any, i: number) => {
+    if (!section || typeof section !== 'object') throw new BadRequestException(`sections[${i}] must be an object`);
+    if (typeof section.type !== 'string') throw new BadRequestException(`sections[${i}].type must be a string`);
+    if (typeof section.icon !== 'string') throw new BadRequestException(`sections[${i}].icon must be a string`);
+    if (typeof section.title !== 'string') throw new BadRequestException(`sections[${i}].title must be a string`);
+    const hasContent = typeof section.content === 'string';
+    const hasItems = Array.isArray(section.items) && section.items.every((it: unknown) => typeof it === 'string');
+    if (!hasContent && !hasItems) {
+      throw new BadRequestException(`sections[${i}] must have a string "content" or a string[] "items"`);
+    }
+  });
+
+  if (!Array.isArray(post.hashtags) || !post.hashtags.every((h: unknown) => typeof h === 'string')) {
+    throw new BadRequestException('hashtags must be a string array');
+  }
+
+  return post as GeneratedPost;
+}
+
+export function countVisibleCharacters(post: GeneratedPost): number {
+  let total = post.title.length + post.opening.length;
+  for (const section of post.sections) {
+    total += section.title.length;
+    if (section.content) total += section.content.length;
+    if (section.items) total += section.items.join(' ').length;
+  }
+  total += post.hashtags.join(' ').length;
+  return total;
+}
+
 @Injectable()
 export class JobValidationService {
   validate(dto: CreateJobDto) {
@@ -57,4 +117,7 @@ export class JobValidationService {
       throw new BadRequestException('At least one key responsibility is required');
     }
   }
+
+  
 }
+

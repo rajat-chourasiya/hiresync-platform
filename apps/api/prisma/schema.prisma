@@ -87,7 +87,8 @@ model Job {
   title       String
   slug        String
   description String? 
-  generatedPost Json?      
+  generatedPost Json?
+  descriptionSettings  Json?      
 
   // Basic Info
   roleCategory            String?
@@ -154,6 +155,19 @@ model Job {
   @@unique([orgId, slug])
   @@index([orgId])
   @@map("jobs")
+}
+
+model JobDescriptionVersion {
+  id        String   @id @default(uuid())
+  orgId     String
+  jobId     String
+  version   Int
+  content   Json
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@map("job_description_versions")
 }
 
 model CandidateProfile {
