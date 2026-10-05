@@ -82,23 +82,92 @@ model RolePermission {
 }
 
 model Job {
-  id           String        @id @default(uuid())
-  orgId        String
-  title        String
-  slug         String
-  description  String?
-  skills       String[]
-  stages       String[]      @default([])
-  status       String        @default("draft")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
+  id          String        @id @default(uuid())
+  orgId       String
+  title       String
+  slug        String
+  description String? 
+  generatedPost Json?
+  descriptionSettings  Json?      
+
+  // Basic Info
+  roleCategory            String?
+  jobLevel                String?
+  employmentType          String  @default("full_time")
+  workMode                String  @default("onsite")
+  location                String?
+  remoteEligibleLocations String[] @default([])
+  hybridDaysPerWeek       Int?
+  workingHours            String?
+  department              String?
+  numOpenings             Int?
+  engagementDuration      String?
+
+  // Experience
+  experienceRequirement String   @default("not_required")
+  minExperienceMonths   Int?
+  maxExperienceMonths   Int?
+  freshersPolicy        String   @default("unspecified")
+  experiencePreferred   Boolean  @default(false)
+  experienceArea        String?
+
+  // Skills & Requirements
+  skills            String[] @default([])
+  requiredTechStack String[] @default([])
+  preferredSkills   String[] @default([])
+  domain            String?
+
+  // Education
+  educationRequirement String? @default("not_required")
+  requiredDegree       String?
+  requiredField        String?
+
+  // Role Content
+  keyResponsibilities String[] @default([])
+
+  // Company & Culture
+  companyDescription String?
+  companyStage       String?
+  culturePerks       String[] @default([])
+  whyJoin            String?
+
+  // Compensation & Logistics — never sent to AI
+  showSalary              Boolean   @default(false)
+  salaryMin                Decimal?  @db.Decimal(12, 2)
+  salaryMax                Decimal?  @db.Decimal(12, 2)
+  salaryCurrency            String?
+  salaryPeriod               String?
+  salaryBasis                  String?
+  preferredStartTimeframe    String?
+  preferredStartDate          DateTime?
+  applicationDeadline          DateTime?
+  applicationMethod            String?
+  applicationDestination       String?
+
+  stages      String[]      @default([])
+  status      String        @default("draft")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   applications Application[]
   organization Organization  @relation(fields: [orgId], references: [id])
 
   @@unique([orgId, slug])
   @@index([orgId])
   @@map("jobs")
+}
+
+model JobDescriptionVersion {
+  id        String   @id @default(uuid())
+  orgId     String
+  jobId     String
+  version   Int
+  content   Json
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@map("job_description_versions")
 }
 
 model CandidateProfile {
