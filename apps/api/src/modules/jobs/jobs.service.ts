@@ -7,7 +7,7 @@ import {
   buildJobDescriptionPrompt, buildJobDescriptionEditPrompt, buildRegenerateSectionsPrompt,
 } from './prompts/job-description-generator.prompt';
 import { GeminiService } from '../ai/providers/gemini.service';
-import { JobValidationService } from './validators/job-validation.service';
+import { countVisibleCharacters, JobValidationService, validateGeneratedPost } from './validators/job-validation.service';
 
 @Injectable()
 export class JobsService {
