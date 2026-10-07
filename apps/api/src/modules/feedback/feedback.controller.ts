@@ -5,12 +5,13 @@ import { SubmitInterviewerFeedbackDto} from '../hiring-pipeline/dto/submit-inter
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { FeedbackSummaryService } from './feedback-summary.service';
 
 @Controller('interviews/:interviewId/feedback')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class FeedbackController {
-  constructor(private feedbackService: FeedbackService) {}
+  constructor(private feedbackService: FeedbackService, private feedbackSummaryService: FeedbackSummaryService,) {}
 
   @Post()
   @RequirePermission('feedback.submit')
@@ -27,4 +28,15 @@ export class FeedbackController {
   findByCandidate(@Req() req: any, @Param('interviewId') interviewId: string, @Param('candidateId') candidateId: string) {
     return this.feedbackService.findByCandidate(req.user.orgId, interviewId, candidateId);
   }
+
+  @Post('summary/:candidateId')
+@RequirePermission('applications.review')
+generateSummary(@Req() req: any, @Param('interviewId') interviewId: string, @Param('candidateId') candidateId: string) {
+  return this.feedbackSummaryService.generate(req.user.orgId, interviewId, candidateId);
+}
+
+@Get('summary/:candidateId')
+getSummary(@Req() req: any, @Param('interviewId') interviewId: string, @Param('candidateId') candidateId: string) {
+  return this.feedbackSummaryService.findOne(req.user.orgId, interviewId, candidateId);
+}
 }
