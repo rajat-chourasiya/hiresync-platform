@@ -430,18 +430,22 @@ model AiGeneratedQuestionSet {
 }
 
 model AiFeedbackSummary {
-  id                       String   @id @default(uuid())
-  orgId                    String
-  interviewId              String
-  candidateId              String
-  summary                  String
-  strengths                String[]
-  weaknesses               String[]
-  riskNotes                String[]
-  finalRecommendationDraft String?
-  createdAt                DateTime @default(now())
+  id                 String   @id @default(uuid())
+  orgId              String
+  interviewId        String
+  candidateId        String
+
+  recommendation     String?
+  confidence         String?
+  decisionConfidence Int?
+  averageScore       Decimal? @db.Decimal(3, 2)
+
+  analysis           Json?
+
+  createdAt          DateTime @default(now())
 
   @@index([interviewId])
+  @@index([candidateId])
   @@map("ai_feedback_summaries")
 }
 
