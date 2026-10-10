@@ -10,6 +10,11 @@ services:
       - piston_data:/piston
     networks:
       - piston-net
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "1.0"
 
   runner:
     build:
@@ -25,6 +30,12 @@ services:
       - api
     networks:
       - piston-net
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
+    
 
 volumes:
   piston_data:
