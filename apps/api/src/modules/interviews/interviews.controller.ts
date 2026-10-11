@@ -36,7 +36,7 @@ export class InterviewsController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   findOne(@Req() req: any, @Param('id') id: string) {
-    return this.interviewsService.findOne(req.user.orgId, id);
+    return this.interviewsService.findOneWithStatus(req.user.orgId, id);
   }
 
   // Staff join

@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { EmailService } from '../email/email.service';
 import { RescheduleInterviewDto } from './dto/reschedule-interview.dto';
 import { CancelInterviewDto } from './dto/cancel-interview.dto';
+import { deriveInterviewStatus, expectedFeedbackCount, InterviewLike } from '../../common/helpers/interview-status';
 
 @Injectable()
 export class InterviewsService {
@@ -103,15 +104,48 @@ for (const interviewer of interviewers) {
 }
 
 
-  async findAll(orgId: string, userId: string, role: string) {
-  if (role === 'interviewer') {
-    return this.prisma.interview.findMany({
-      where: { orgId, interviewerIds: { has: userId } },
-      orderBy: { scheduledStart: 'asc' },
-    });
+async findAll(orgId: string, userId: string, role: string) {
+  const where = role === 'interviewer'
+    ? { orgId, interviewerIds: { has: userId } }
+    : { orgId };
+  const interviews = await this.prisma.interview.findMany({ where, orderBy: { scheduledStart: 'asc' } });
+  return this.withDisplayStatus(interviews);
+}
+
+async findOneWithStatus(orgId: string, id: string) {
+  const interview = await this.prisma.interview.findFirst({ where: { id, orgId } });
+  if (!interview) return null;
+  const [withStatus] = await this.withDisplayStatus([interview]);
+  return withStatus;
+}
+
+private async withDisplayStatus<T extends InterviewLike & { id: string }>(interviews: T[]) {
+  if (interviews.length === 0) return [];
+
+  const counts = await this.prisma.feedback.groupBy({
+    by: ['interviewId'],
+    where: { interviewId: { in: interviews.map((i) => i.id) } },
+    _count: { _all: true },
+  });
+  const countMap = new Map(counts.map((c) => [c.interviewId, c._count._all]));
+
+  const result = interviews.map((i) => {
+    const submitted = countMap.get(i.id) ?? 0;
+    return {
+      ...i,
+      displayStatus: deriveInterviewStatus(i, submitted),
+      feedbackProgress: { submitted, expected: expectedFeedbackCount(i) },
+    };
+  });
+
+  const toHeal = result
+    .filter((r) => r.displayStatus === 'completed' && r.status !== 'completed' && r.status !== 'cancelled')
+    .map((r) => r.id);
+  if (toHeal.length > 0) {
+    await this.prisma.interview.updateMany({ where: { id: { in: toHeal } }, data: { status: 'completed' } });
   }
 
-  return this.prisma.interview.findMany({ where: { orgId }, orderBy: { scheduledStart: 'asc' } });
+  return result;
 }
 
   async findOne(orgId: string, id: string) {
