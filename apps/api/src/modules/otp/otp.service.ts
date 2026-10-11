@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { EmailService } from '../email/email.service';
 
@@ -12,13 +13,20 @@ export class OtpService {
       where: { email, purpose },
       orderBy: { createdAt: 'desc' },
     });
+
+
+    if (recentOtp?.lockedUntil && recentOtp.lockedUntil > new Date()) {
+      throw new BadRequestException('Too many attempts. Try again later.');
+    }
     if (recentOtp && Date.now() - recentOtp.createdAt.getTime() < 60_000) {
       throw new BadRequestException('Please wait before requesting another OTP');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = randomInt(100000, 1000000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
 
+   
+    await this.prisma.otpVerification.deleteMany({ where: { email, purpose } });
     await this.prisma.otpVerification.create({
       data: {
         email,
@@ -28,11 +36,16 @@ export class OtpService {
       },
     });
 
-    await this.emailService.sendEmail(email, 'Your HireSync OTP', `<p>Your OTP is <b>${otp}</b>. Valid for 10 minutes.</p>`);
+    await this.emailService.sendEmail(
+      email,
+      'Your HireSync OTP',
+      `<p>Your OTP is <b>${otp}</b>. Valid for 10 minutes.</p>`,
+    );
     return { expiresIn: 600 };
   }
 
-  async verify(email: string, purpose: string, otp: string) {
+ 
+  async verify(email: string, purpose: string, otp: string, consume = true) {
     const record = await this.prisma.otpVerification.findFirst({
       where: { email, purpose },
       orderBy: { createdAt: 'desc' },
@@ -55,6 +68,9 @@ export class OtpService {
       throw new BadRequestException('Invalid OTP');
     }
 
+    if (consume) {
+      await this.prisma.otpVerification.deleteMany({ where: { email, purpose } });
+    }
     return { verified: true };
   }
 }

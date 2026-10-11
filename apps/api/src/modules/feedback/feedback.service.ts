@@ -3,6 +3,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { SubmitInterviewerFeedbackDto } from '../hiring-pipeline/dto/submit-interviewer-feedback.dto';
 import { STAGE1_INTERVIEWER_CRITERIA, computeWeightedScore } from '../hiring-pipeline/constants/pipeline-criteria';
 import { Prisma } from '@prisma/client';
+import { syncCompletedStatus } from '../../common/helpers/interview-status';
 
 @Injectable()
 export class FeedbackService {
@@ -49,11 +50,8 @@ const feedback = await this.prisma.feedback.create({
     recommendation: dto.recommendation,
   },
 });
-    const totalExpected = interview.interviewerIds.length * interview.candidateIds.length;
-    const totalSubmitted = await this.prisma.feedback.count({ where: { interviewId } });
-    if (totalSubmitted >= totalExpected) {
-      await this.prisma.interview.update({ where: { id: interviewId }, data: { status: 'completed' } });
-    }
+
+    await syncCompletedStatus(this.prisma, interviewId);
 
     return feedback;
   }

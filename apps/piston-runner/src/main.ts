@@ -1,5 +1,5 @@
 import express from 'express';
-import { executeCode } from './executor/execute';
+import { executeCode, RunnerError } from './executor/execute';
 
 const app = express();
 app.use(express.json());
@@ -7,12 +7,19 @@ app.use(express.json());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.post('/run', async (req, res) => {
+  const { language, version, code } = req.body ?? {};
+  if (typeof language !== 'string' || typeof version !== 'string' || typeof code !== 'string') {
+    return res.status(400).json({ error: 'language, version and code are required strings' });
+  }
+
   try {
-    const { language, version, code } = req.body;
-    const result = await executeCode(language, version, code);
-    res.json(result);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    res.json(await executeCode(language, version, code));
+  } catch (err) {
+    if (err instanceof RunnerError) {
+      return res.status(err.status).json({ error: err.message });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Unexpected runner error' });
   }
 });
 
