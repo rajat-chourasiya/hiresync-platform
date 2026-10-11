@@ -8,24 +8,15 @@ export class CandidateAuthService {
   constructor(private otpService: OtpService, private prisma: PrismaService) {}
 
   async requestLogin(orgId: string, email: string) {
-  const candidate = await this.prisma.candidateProfile.findFirst({
-    where: {
-      orgId,
-      email,
-    },
-  });
-
-  if (!candidate) {
-    throw new NotFoundException(
-      'No profile found for this email in this organization',
-    );
+    const candidate = await this.prisma.candidateProfile.findFirst({ where: { orgId, email } });
+    if (candidate) {
+      await this.otpService.send(email, 'candidate_login');
+    }
+    return { expiresIn: 600 };
   }
 
-  return this.otpService.send(email, 'candidate_login');
-}
-
   async verifyLogin(orgId: string, email: string, otp: string) {
-    await this.otpService.verify(email, 'candidate_login', otp);
+    await this.otpService.verify(email, 'candidate_login', otp); // consume=true
 
     const candidate = await this.prisma.candidateProfile.findFirst({ where: { orgId, email } });
     if (!candidate) {

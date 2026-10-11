@@ -14,6 +14,6 @@ export class OtpController {
 
   @Post('verify')
   verify(@Body() dto: VerifyOtpDto) {
-    return this.otpService.verify(dto.email, dto.purpose, dto.otp);
+    return this.otpService.verify(dto.email, dto.purpose, dto.otp, false);
   }
 }
