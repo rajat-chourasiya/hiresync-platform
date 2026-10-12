@@ -3,7 +3,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { SubmitInterviewerFeedbackDto } from '../hiring-pipeline/dto/submit-interviewer-feedback.dto';
 import { STAGE1_INTERVIEWER_CRITERIA, computeWeightedScore } from '../hiring-pipeline/constants/pipeline-criteria';
 import { Prisma } from '@prisma/client';
-import { syncCompletedStatus } from '../../common/helpers/interview-status';
+import { syncInterviewLifecycle } from '../../common/helpers/interview-status';
 
 @Injectable()
 export class FeedbackService {
@@ -51,7 +51,7 @@ const feedback = await this.prisma.feedback.create({
   },
 });
 
-    await syncCompletedStatus(this.prisma, interviewId);
+    await syncInterviewLifecycle(this.prisma, interviewId);
 
     return feedback;
   }

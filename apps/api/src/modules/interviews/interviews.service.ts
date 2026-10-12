@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 import { EmailService } from '../email/email.service';
 import { RescheduleInterviewDto } from './dto/reschedule-interview.dto';
 import { CancelInterviewDto } from './dto/cancel-interview.dto';
-import { deriveInterviewStatus, expectedFeedbackCount, InterviewLike } from '../../common/helpers/interview-status';
+import { deriveInterviewStatus, expectedFeedbackCount, InterviewLike, syncInterviewLifecycle } from '../../common/helpers/interview-status';
 
 @Injectable()
 export class InterviewsService {
@@ -109,43 +109,80 @@ async findAll(orgId: string, userId: string, role: string) {
     ? { orgId, interviewerIds: { has: userId } }
     : { orgId };
   const interviews = await this.prisma.interview.findMany({ where, orderBy: { scheduledStart: 'asc' } });
-  return this.withDisplayStatus(interviews);
+  return this.withLiveStatus(interviews);
 }
 
 async findOneWithStatus(orgId: string, id: string) {
   const interview = await this.prisma.interview.findFirst({ where: { id, orgId } });
   if (!interview) return null;
-  const [withStatus] = await this.withDisplayStatus([interview]);
+  const [withStatus] = await this.withLiveStatus([interview]);
   return withStatus;
 }
 
-private async withDisplayStatus<T extends InterviewLike & { id: string }>(interviews: T[]) {
+
+private async withLiveStatus<T extends InterviewLike & { id: string }>(
+  interviews: T[],
+) {
   if (interviews.length === 0) return [];
 
   const counts = await this.prisma.feedback.groupBy({
     by: ['interviewId'],
-    where: { interviewId: { in: interviews.map((i) => i.id) } },
+    where: {
+      interviewId: { in: interviews.map((i) => i.id) },
+    },
     _count: { _all: true },
   });
-  const countMap = new Map(counts.map((c) => [c.interviewId, c._count._all]));
 
-  const result = interviews.map((i) => {
+  const countMap = new Map(
+    counts.map((c) => [c.interviewId, c._count._all]),
+  );
+
+  const result: Array<
+    T & {
+      status: string;
+      feedbackProgress: {
+        submitted: number;
+        expected: number;
+      };
+    }
+  > = [];
+
+  for (const i of interviews) {
     const submitted = countMap.get(i.id) ?? 0;
-    return {
-      ...i,
-      displayStatus: deriveInterviewStatus(i, submitted),
-      feedbackProgress: { submitted, expected: expectedFeedbackCount(i) },
-    };
-  });
+    let status = i.status;
 
-  const toHeal = result
-    .filter((r) => r.displayStatus === 'completed' && r.status !== 'completed' && r.status !== 'cancelled')
-    .map((r) => r.id);
-  if (toHeal.length > 0) {
-    await this.prisma.interview.updateMany({ where: { id: { in: toHeal } }, data: { status: 'completed' } });
+    if (i.status !== 'cancelled' && i.status !== 'completed') {
+      const next = deriveInterviewStatus(i, submitted);
+
+      if (next !== i.status) {
+        await syncInterviewLifecycle(this.prisma, i.id);
+        status = next;
+      }
+    }
+
+    result.push({
+      ...i,
+      status,
+      feedbackProgress: {
+        submitted,
+        expected: expectedFeedbackCount(i),
+      },
+    });
   }
 
   return result;
+}
+
+
+
+async syncAllStatuses(orgId: string) {
+  const interviews = await this.prisma.interview.findMany({ where: { orgId }, select: { id: true } });
+  let updated = 0;
+  for (const { id } of interviews) {
+    const r = await syncInterviewLifecycle(this.prisma, id);
+    if (r?.changed) updated++;
+  }
+  return { checked: interviews.length, updated };
 }
 
   async findOne(orgId: string, id: string) {
@@ -281,6 +318,7 @@ async reschedule(orgId: string, interviewId: string, dto: RescheduleInterviewDto
     data: { scheduledStart: newStart, scheduledEnd: newEnd, status: 'scheduled' },
   });
 
+  await syncInterviewLifecycle(this.prisma, interviewId);
 
   const job = await this.prisma.job.findUnique({ where: { id: interview.jobId } });
   const candidates = await this.prisma.candidateProfile.findMany({ where: { id: { in: interview.candidateIds } } });
@@ -316,10 +354,8 @@ async cancel(orgId: string, interviewId: string, dto: CancelInterviewDto) {
 
   const updated = await this.prisma.interview.update({ where: { id: interviewId }, data: { status: 'cancelled' } });
 
-  await this.prisma.application.updateMany({
-    where: { orgId, candidateId: { in: interview.candidateIds }, jobId: interview.jobId, status: 'interview_scheduled' },
-    data: { status: 'shortlisted' },
-  });
+ 
+  await syncInterviewLifecycle(this.prisma, interviewId);
 
   const job = await this.prisma.job.findUnique({ where: { id: interview.jobId } });
   const candidates = await this.prisma.candidateProfile.findMany({ where: { id: { in: interview.candidateIds } } });
