@@ -142,4 +142,12 @@ async joinViaInterviewerLink(
   cancel(@Req() req: any, @Param('id') id: string, @Body() dto: CancelInterviewDto) {
     return this.interviewsService.cancel(req.user.orgId, id, dto);
   }
+
+  @Post('sync-statuses')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@RequirePermission('interviews.schedule')
+@ApiBearerAuth()
+syncStatuses(@Req() req: any) {
+  return this.interviewsService.syncAllStatuses(req.user.orgId);
+}
 }
