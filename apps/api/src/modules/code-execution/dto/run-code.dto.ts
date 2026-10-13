@@ -1,4 +1,4 @@
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class RunCodeDto {
   @IsString()
@@ -15,4 +15,24 @@ export class RunCodeDto {
   @MinLength(1)
   @MaxLength(50000)
   code!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10000)
+  stdin?: string;
+
+
+  @IsOptional()
+  @IsBoolean()
+  evaluate?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  candidateId?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(9)
+  problemIndex?: number;
 }

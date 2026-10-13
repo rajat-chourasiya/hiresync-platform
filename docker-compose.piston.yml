@@ -26,6 +26,9 @@ services:
       - '4000:4000'
     environment:
       - PISTON_INTERNAL_URL=http://api:2000
+      - PISTON_MAX_MEMORY_MB=256
+      - PISTON_RUN_TIMEOUT_MS=3000
+      - PISTON_TIMEOUT_MS=10000
     depends_on:
       - api
     networks:
