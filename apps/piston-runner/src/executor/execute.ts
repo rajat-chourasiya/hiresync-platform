@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { PISTON_API_URL, ALLOWED_LANGUAGES } from '../sandbox-config/languages';
-import { TIMEOUT_MS } from '../security/limits';
+import { TIMEOUT_MS, RUN_TIMEOUT_MS, MAX_MEMORY_BYTES } from '../security/limits';
 
 export class RunnerError extends Error {
   constructor(public status: number, message: string) {
@@ -8,7 +8,7 @@ export class RunnerError extends Error {
   }
 }
 
-export async function executeCode(language: string, version: string, code: string) {
+export async function executeCode(language: string, version: string, code: string, stdin = '') {
   if (!ALLOWED_LANGUAGES.includes(language)) {
     throw new RunnerError(400, `Language "${language}" is not allowed. Allowed: ${ALLOWED_LANGUAGES.join(', ')}`);
   }
@@ -16,15 +16,21 @@ export async function executeCode(language: string, version: string, code: strin
   try {
     const res = await axios.post(
       `${PISTON_API_URL}/api/v2/execute`,
-      { language, version, files: [{ content: code }] },
+      {
+        language,
+        version,
+        files: [{ content: code }],
+        stdin,
+        run_timeout: RUN_TIMEOUT_MS,
+        run_memory_limit: MAX_MEMORY_BYTES,
+        compile_memory_limit: MAX_MEMORY_BYTES,
+      },
       { timeout: TIMEOUT_MS },
     );
     return res.data;
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      if (err.code === 'ECONNABORTED') {
-        throw new RunnerError(504, 'Execution timed out');
-      }
+      if (err.code === 'ECONNABORTED') throw new RunnerError(504, 'Execution timed out');
       if (err.response) {
         const upstream = err.response.data?.message ?? JSON.stringify(err.response.data);
         throw new RunnerError(err.response.status === 400 ? 400 : 502, `Piston rejected the request: ${upstream}`);
