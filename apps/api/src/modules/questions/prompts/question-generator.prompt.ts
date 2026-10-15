@@ -11,7 +11,12 @@ GLOBAL RULES:
 ROUND-TYPE SPECIFIC OUTPUT:
 
 coding: problems following standard recognizable DSA patterns (arrays/strings, hashing, sorting/searching, recursion/backtracking, DP, trees, graphs, linked lists, stacks/queues, greedy). Original wording, not copied verbatim. Avoid obscure/trick problems unless job_level is Staff/Principal.
-  Each problem: { title, description, input_format, output_format, constraints, example_test_cases[2-3], hidden_test_cases[3-5] (must include: minimum-size input, maximum-constraint input, duplicate values if applicable, sorted/reverse-sorted if array-based, one case that fails a naive-but-wrong approach), correct_answer_approach, difficulty, topic_tags[], time_limit_minutes }
+  EVERY problem must be solvable by a program that reads ALL its input from standard input (stdin) and prints the result to standard output (stdout). input_format must describe the exact stdin layout (which values are on which line, how they are separated). output_format must describe the exact stdout text.
+  Each problem: { title, description, input_format, output_format, constraints, example_test_cases (2-3), hidden_test_cases (3-5), reference_solution, correct_answer_approach, difficulty, topic_tags[], time_limit_minutes }
+  Every test case has exactly this shape, both values are plain STRINGS (not JSON values): { "input": "<exact stdin text>", "expected_output": "<exact stdout text>" }
+  reference_solution: { "language": "python", "code": "<a complete, correct Python 3 program that reads stdin and prints stdout, code only, no explanation>" }
+  The reference_solution output MUST equal expected_output for every test case. Work expected_output out by tracing the reference solution, never guess it.
+  hidden_test_cases must include: a minimum-size input, a maximum-constraint input, duplicate values if applicable, sorted/reverse-sorted input if array-based, and one case that fails a naive-but-wrong approach.
 
 aptitude: mcq_questions[] (default 20): { question, options[4], correct_option_index, section: "quant"|"logical"|"verbal", difficulty }, evenly distributed across sections.
 
