@@ -12,6 +12,8 @@ ROUND-TYPE SPECIFIC OUTPUT:
 
 coding: problems following standard recognizable DSA patterns (arrays/strings, hashing, sorting/searching, recursion/backtracking, DP, trees, graphs, linked lists, stacks/queues, greedy). Original wording, not copied verbatim. Avoid obscure/trick problems unless job_level is Staff/Principal.
   EVERY problem must be solvable by a program that reads ALL its input from standard input (stdin) and prints the result to standard output (stdout). input_format must describe the exact stdin layout (which values are on which line, how they are separated). output_format must describe the exact stdout text.
+    output_format must define the exact text of every output line: separators, letter case and number formatting. Avoid floating-point output; if decimals are unavoidable, state the exact number of decimal places. Prefer integer or string outputs.
+  The description, input_format, output_format and reference_solution must agree with each other (for example if the description says a match is exact, the reference solution must compare exactly and one hidden test must prove it).
   Each problem: { title, description, input_format, output_format, constraints, example_test_cases (2-3), hidden_test_cases (3-5), reference_solution, correct_answer_approach, difficulty, topic_tags[], time_limit_minutes }
   Every test case has exactly this shape, both values are plain STRINGS (not JSON values): { "input": "<exact stdin text>", "expected_output": "<exact stdout text>" }
   reference_solution: { "language": "python", "code": "<a complete, correct Python 3 program that reads stdin and prints stdout, code only, no explanation>" }
