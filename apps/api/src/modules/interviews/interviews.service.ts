@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { ScheduleInterviewDto, VALID_TOOLS } from './dto/schedule-interview.dto';
 import * as crypto from 'crypto';
@@ -6,11 +6,13 @@ import { EmailService } from '../email/email.service';
 import { RescheduleInterviewDto } from './dto/reschedule-interview.dto';
 import { CancelInterviewDto } from './dto/cancel-interview.dto';
 import { deriveInterviewStatus, expectedFeedbackCount, InterviewLike, syncInterviewLifecycle } from '../../common/helpers/interview-status';
+import { enqueueQuestionGeneration } from '../questions/question-generation.queue';
 
 @Injectable()
 export class InterviewsService {
   constructor(private prisma: PrismaService, private emailService: EmailService) {}
 
+  private logger = new Logger(InterviewsService.name);
 async schedule(orgId: string, dto: ScheduleInterviewDto) {
   if (dto.interviewType === 'single_candidate' && dto.applicationIds.length !== 1) {
     throw new BadRequestException('single_candidate interviews must have exactly one candidate');
@@ -69,6 +71,19 @@ async schedule(orgId: string, dto: ScheduleInterviewDto) {
     data: { status: 'interview_scheduled' },
   });
 
+  const autoGenerate = dto.autoGenerateQuestions !== false;
+const questionRoundType = dto.roundType ?? 'technical_interview';
+if (autoGenerate) {
+  for (const candidateId of candidateIds) {
+    try {
+      await enqueueQuestionGeneration({ interviewId: interview.id, candidateId, roundType: questionRoundType });
+    } catch (err) {
+      
+      this.logger.warn(`Could not queue question generation: ${err instanceof Error ? err.message : err}`);
+    }
+  }
+}
+
 
   const uniqueApplications = Array.from(new Map(applications.map((a) => [a.candidateId, a])).values());
   for (const application of uniqueApplications) {
@@ -89,7 +104,10 @@ for (const interviewer of interviewers) {
   );
 }
 
-  return interview;
+  return {
+  ...interview,
+  questionGeneration: autoGenerate ? { status: 'queued', roundType: questionRoundType } : { status: 'disabled' },
+};
 }
 
 

@@ -1,6 +1,10 @@
-import { IsString, IsArray, IsDateString, Validate, ValidatorConstraint, ValidatorConstraintInterface, IsIn, IsOptional } from 'class-validator';
+import {
+  IsArray, IsBoolean, IsDateString, IsIn, IsOptional, IsString,
+  Validate, ValidatorConstraint, ValidatorConstraintInterface,
+} from 'class-validator';
+import { VALID_ROUND_TYPES } from '../../questions/constants/difficulty';
 
-const VALID_TOOLS = ['chat', 'video', 'code_execution', 'whiteboard'];
+export const VALID_TOOLS = ['chat', 'video', 'code_execution', 'whiteboard'];
 
 @ValidatorConstraint({ name: 'isFutureDate', async: false })
 class IsFutureDateConstraint implements ValidatorConstraintInterface {
@@ -8,7 +12,7 @@ class IsFutureDateConstraint implements ValidatorConstraintInterface {
     return new Date(dateString) > new Date();
   }
   defaultMessage() {
-    return 'scheduledStart must be a future date/time, not in the past';
+    return 'scheduledStart must be a future date/time';
   }
 }
 
@@ -27,6 +31,16 @@ export class ScheduleInterviewDto {
   @IsOptional()
   enabledTools?: string[];
 
+  // Kis type ke questions auto-generate hon (default technical_interview)
+  @IsOptional()
+  @IsIn(VALID_ROUND_TYPES)
+  roundType?: string;
+
+  // false bhejne par auto-generation band (default true)
+  @IsOptional()
+  @IsBoolean()
+  autoGenerateQuestions?: boolean;
+
   @IsDateString()
   @Validate(IsFutureDateConstraint)
   scheduledStart!: string;
@@ -34,5 +48,3 @@ export class ScheduleInterviewDto {
   @IsDateString()
   scheduledEnd!: string;
 }
-
-export { VALID_TOOLS };
