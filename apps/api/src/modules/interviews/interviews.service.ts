@@ -58,7 +58,9 @@ async schedule(orgId: string, dto: ScheduleInterviewDto) {
 
   const interview = await this.prisma.interview.create({
     data: {
-      orgId, jobId: job.id, interviewType: dto.interviewType, candidateIds,
+      orgId, jobId: job.id, interviewType: dto.interviewType,
+      roundType: dto.roundType ?? 'technical_interview',
+      candidateIds,
       interviewerIds: dto.interviewerIds, enabledTools: tools,
       scheduledStart: start, scheduledEnd: end, roomId, status: 'scheduled',
     },
