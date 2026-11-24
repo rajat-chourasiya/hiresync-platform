@@ -19,7 +19,7 @@ export class GeminiService {
     private readonly gemini: GoogleGenerativeAI,
   ) {}
 
-  async generate(prompt: string): Promise<string> {
+  async generate(prompt: string, options?: { jsonMode?: boolean }): Promise<string> {
     let lastError: unknown;
 
     for (const modelName of this.models) {
@@ -28,6 +28,9 @@ export class GeminiService {
 
         const model = this.gemini.getGenerativeModel({
           model: modelName,
+          ...(options?.jsonMode
+            ? { generationConfig: { responseMimeType: 'application/json' } }
+            : {}),
         });
 
         const result = await model.generateContent(prompt);

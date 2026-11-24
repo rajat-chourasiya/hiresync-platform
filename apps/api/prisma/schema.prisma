@@ -225,6 +225,7 @@ model Interview {
   orgId          String
   jobId          String
   interviewType  String   @default("single_candidate")  // "single_candidate" | "group_discussion"
+  roundType      String   @default("technical_interview") // coding | aptitude | english | technical_interview | system_design | behavioral | hiring_manager_final
   candidateIds   String[]
   interviewerIds String[]
   enabledTools   String[] @default(["chat", "video"])
@@ -416,9 +417,14 @@ model AiGeneratedQuestionSet {
   candidateId     String
   roundType       String
   difficulty      String?
+  
   status          String   @default("draft")
   questions       Json
   interviewerNote String?
+  
+  reviewerId      String?  
+  reviewerType    String?  
+  reviewedAt      DateTime? 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -426,6 +432,7 @@ model AiGeneratedQuestionSet {
   @@index([orgId])
   @@index([jobId])
   @@index([interviewId])
+  @@index([reviewerId])
   @@map("ai_question_sets")
 }
 

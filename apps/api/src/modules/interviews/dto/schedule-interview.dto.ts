@@ -1,4 +1,5 @@
 import { IsString, IsArray, IsDateString, Validate, ValidatorConstraint, ValidatorConstraintInterface, IsIn, IsOptional } from 'class-validator';
+import { VALID_ROUND_TYPES } from '../../questions/constants/difficulty';
 
 const VALID_TOOLS = ['chat', 'video', 'code_execution', 'whiteboard'];
 
@@ -19,6 +20,11 @@ export class ScheduleInterviewDto {
   @IsString()
   @IsIn(['single_candidate', 'group_discussion'])
   interviewType!: string;
+
+  @IsString()
+  @IsIn(VALID_ROUND_TYPES)
+  @IsOptional()
+  roundType?: string;
 
   @IsArray()
   interviewerIds!: string[];
