@@ -8,6 +8,7 @@ import { candidateInterviewInviteTemplate, interviewerAssignmentTemplate } from 
 import { applicationConfirmationTemplate } from './templates/application-confirmation.template';
 import { candidateRescheduleTemplate, interviewerRescheduleTemplate } from './templates/interview-reschedule.template';
 import { interviewCancelTemplate } from './templates/interview-cancel.template';
+import { questionsReadyForReviewTemplate } from './templates/questions-ready.template';
 @Injectable()
 export class EmailService {
   constructor(
@@ -55,6 +56,20 @@ async sendInterviewCancellation(to: string, recipientName: string, jobTitle: str
   const { subject, html } = interviewCancelTemplate(recipientName, jobTitle, reason);
   return this.send(to, subject, html);
 }
+
+  async sendQuestionsReadyForReview(
+    to: string,
+    reviewerName: string,
+    jobTitle: string,
+    candidateName: string,
+    roundType: string,
+    reviewUrl: string,
+  ) {
+    const { subject, html } = questionsReadyForReviewTemplate(
+      reviewerName, jobTitle, candidateName, roundType, reviewUrl,
+    );
+    return this.send(to, subject, html);
+  }
 
   async sendOfferDecision(to: string, candidateName: string, jobTitle: string, status: 'hired' | 'rejected') {
     const { subject, html } = offerDecisionTemplate(candidateName, jobTitle, status);
