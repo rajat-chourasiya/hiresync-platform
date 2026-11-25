@@ -8,6 +8,7 @@ import { PrismaService } from './database/prisma.service';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SanitizeInterceptor } from './common/interceptors/sanitize.interceptor';
 import './modules/queue/interview-status.worker';
+import './modules/queue/interview-reminder.worker';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
