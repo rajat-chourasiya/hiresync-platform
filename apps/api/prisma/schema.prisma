@@ -245,6 +245,20 @@ model Interview {
   @@map("interviews")
 }
 
+
+model InterviewReminder {
+  id            String   @id @default(uuid())
+  interviewId   String
+  recipientId   String   // User.id or CandidateProfile.id
+  recipientType String   // 'staff' | 'candidate'
+  reminderType  String   // 'questions_not_reviewed' | 'one_day_before' | 'day_of' | 'one_hour_before'
+  sentAt        DateTime @default(now())
+
+  @@unique([interviewId, recipientId, reminderType])
+  @@index([interviewId])
+  @@map("interview_reminders")
+}
+
 model InterviewRoom {
   id             String    @id @default(uuid())
   interviewId    String    @unique

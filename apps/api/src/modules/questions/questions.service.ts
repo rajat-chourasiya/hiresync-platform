@@ -15,6 +15,52 @@ import {
 
 const REFERENCE_LANGUAGES = ['python', 'javascript'];
 
+/**
+ * Gemini sometimes emits literal newlines/tabs inside JSON string values
+ * even with responseMimeType:'application/json' — which is invalid JSON.
+ * This scanner walks char-by-char, tracks whether we are inside a JSON string,
+ * and escapes any bare control characters it finds there.
+ */
+function sanitizeJsonControlChars(raw: string): string {
+  let inString = false;
+  let escaped = false;
+  let result = '';
+
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+
+    if (escaped) {
+      result += ch;
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '\\' && inString) {
+      result += ch;
+      escaped = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = !inString;
+      result += ch;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === '\n') { result += '\\n'; continue; }
+      if (ch === '\r') { result += '\\r'; continue; }
+      if (ch === '\t') { result += '\\t'; continue; }
+      if (ch === '\b') { result += '\\b'; continue; }
+      if (ch === '\f') { result += '\\f'; continue; }
+    }
+
+    result += ch;
+  }
+
+  return result;
+}
+
 @Injectable()
 export class QuestionsService {
   private readonly logger = new Logger(QuestionsService.name);
@@ -137,7 +183,9 @@ export class QuestionsService {
     const raw = await this.gemini.generate(prompt, { jsonMode: true });
     let parsed: any;
     try {
-      const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      const cleaned = sanitizeJsonControlChars(
+        raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim(),
+      );
       parsed = JSON.parse(cleaned);
     } catch (firstErr) {
       // Fallback: extract outermost { ... } object in case Gemini added prose around JSON
@@ -145,7 +193,7 @@ export class QuestionsService {
       const end = raw.lastIndexOf('}');
       if (start !== -1 && end > start) {
         try {
-          parsed = JSON.parse(raw.slice(start, end + 1));
+          parsed = JSON.parse(sanitizeJsonControlChars(raw.slice(start, end + 1)));
         } catch (secondErr) {
           this.logger.error(
             `AI returned invalid JSON (${secondErr instanceof Error ? secondErr.message : 'parse error'}). Raw output:\n${raw}`,
