@@ -34,12 +34,20 @@ export class ApplicationsService {
       data: {
         orgId, name: dto.name, email: dto.email, phone: dto.phone,
         skills: dto.skills ?? [], resumeUrl: dto.resumeUrl, resumeHash: dto.resumeHash,
+        ...(dto.timezone ? { timezone: dto.timezone } : {}),
       },
     });
   } else {
     candidate = await this.prisma.candidateProfile.update({
       where: { id: candidate.id },
-      data: { name: dto.name, phone: dto.phone, skills: dto.skills ?? [], resumeUrl: dto.resumeUrl, resumeHash: dto.resumeHash },
+      data: {
+        name: dto.name,
+        phone: dto.phone,
+        skills: dto.skills ?? [],
+        resumeUrl: dto.resumeUrl,
+        resumeHash: dto.resumeHash,
+        ...(dto.timezone ? { timezone: dto.timezone } : {}),
+      },
     });
   }
 

@@ -27,13 +27,13 @@ export class EmailService {
     return this.send(to, subject, html);
   }
 
-  async sendCandidateInterviewInvite(to: string, candidateName: string, jobTitle: string, scheduledStart: Date, joinUrl: string) {
-  const { subject, html } = candidateInterviewInviteTemplate(candidateName, jobTitle, scheduledStart, joinUrl);
+  async sendCandidateInterviewInvite(to: string, candidateName: string, jobTitle: string, scheduledStart: Date, joinUrl: string, timeZone?: string) {
+  const { subject, html } = candidateInterviewInviteTemplate(candidateName, jobTitle, scheduledStart, joinUrl, timeZone);
   return this.send(to, subject, html);
 }
 
-async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: string, candidateName: string, scheduledStart: Date, joinUrl: string, questionsUrl: string) {
-  const { subject, html } = interviewerAssignmentTemplate(interviewerName, jobTitle, candidateName, scheduledStart, joinUrl, questionsUrl);
+async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: string, candidateName: string, scheduledStart: Date, joinUrl: string, questionsUrl: string, timeZone?: string) {
+  const { subject, html } = interviewerAssignmentTemplate(interviewerName, jobTitle, candidateName, scheduledStart, joinUrl, questionsUrl, timeZone);
   return this.send(to, subject, html);
 }
 
@@ -42,13 +42,13 @@ async sendInterviewerAssignment(to: string, interviewerName: string, jobTitle: s
     return this.send(to, subject, html);
   }
 
-  async sendCandidateReschedule(to: string, candidateName: string, jobTitle: string, newStart: Date, joinUrl: string) {
-  const { subject, html } = candidateRescheduleTemplate(candidateName, jobTitle, newStart, joinUrl);
+  async sendCandidateReschedule(to: string, candidateName: string, jobTitle: string, newStart: Date, joinUrl: string, timeZone?: string) {
+  const { subject, html } = candidateRescheduleTemplate(candidateName, jobTitle, newStart, joinUrl, timeZone);
   return this.send(to, subject, html);
 }
 
-async sendInterviewerReschedule(to: string, interviewerName: string, jobTitle: string, candidateName: string, newStart: Date, joinUrl: string, questionsUrl: string) {
-  const { subject, html } = interviewerRescheduleTemplate(interviewerName, jobTitle, candidateName, newStart, joinUrl, questionsUrl);
+async sendInterviewerReschedule(to: string, interviewerName: string, jobTitle: string, candidateName: string, newStart: Date, joinUrl: string, questionsUrl: string, timeZone?: string) {
+  const { subject, html } = interviewerRescheduleTemplate(interviewerName, jobTitle, candidateName, newStart, joinUrl, questionsUrl, timeZone);
   return this.send(to, subject, html);
 }
 
