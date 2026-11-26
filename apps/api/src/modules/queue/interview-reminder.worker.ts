@@ -131,11 +131,11 @@ async function runSweep() {
       prisma.job.findUnique({ where: { id: interview.jobId }, select: { title: true } }),
       prisma.candidateProfile.findMany({
         where: { id: { in: interview.candidateIds } },
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, timezone: true },
       }),
       prisma.user.findMany({
         where: { id: { in: interview.interviewerIds } },
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, timezone: true },
       }),
       prisma.aiGeneratedQuestionSet.findMany({
         where: { interviewId: interview.id },
@@ -167,6 +167,7 @@ async function runSweep() {
           candidateName,
           interview.scheduledStart,
           reviewUrl,
+          reviewer.timezone,
         );
         await sendEmail(reviewer.email, subject, html).catch((e: Error) =>
           logger.error(`Failed questions_not_reviewed email to ${reviewer.email}: ${e.message}`),
@@ -182,7 +183,7 @@ async function runSweep() {
         if (!ok) continue;
         const joinUrl = await getCandidateJoinUrl(interview.id, candidate.id).catch(() => process.env.APP_URL as string);
         const { subject, html } = oneDayBeforeTemplate(
-          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate',
+          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate', undefined, candidate.timezone,
         );
         await sendEmail(candidate.email, subject, html).catch((e: Error) =>
           logger.error(`Failed one_day_before email to ${candidate.email}: ${e.message}`),
@@ -195,7 +196,7 @@ async function runSweep() {
         const joinUrl = getStaffJoinUrl(interview.id, interviewer.id);
         const { subject, html } = oneDayBeforeTemplate(
           interviewer.name ?? interviewer.email, job.title,
-          interview.scheduledStart, joinUrl, 'staff', candidateNames,
+          interview.scheduledStart, joinUrl, 'staff', candidateNames, interviewer.timezone,
         );
         await sendEmail(interviewer.email, subject, html).catch((e: Error) =>
           logger.error(`Failed one_day_before email to ${interviewer.email}: ${e.message}`),
@@ -210,7 +211,7 @@ async function runSweep() {
         if (!ok) continue;
         const joinUrl = await getCandidateJoinUrl(interview.id, candidate.id).catch(() => process.env.APP_URL as string);
         const { subject, html } = dayOfTemplate(
-          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate',
+          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate', undefined, candidate.timezone,
         );
         await sendEmail(candidate.email, subject, html).catch((e: Error) =>
           logger.error(`Failed day_of email to ${candidate.email}: ${e.message}`),
@@ -222,7 +223,7 @@ async function runSweep() {
         const joinUrl = getStaffJoinUrl(interview.id, interviewer.id);
         const { subject, html } = dayOfTemplate(
           interviewer.name ?? interviewer.email, job.title,
-          interview.scheduledStart, joinUrl, 'staff', candidateNames,
+          interview.scheduledStart, joinUrl, 'staff', candidateNames, interviewer.timezone,
         );
         await sendEmail(interviewer.email, subject, html).catch((e: Error) =>
           logger.error(`Failed day_of email to ${interviewer.email}: ${e.message}`),
@@ -237,7 +238,7 @@ async function runSweep() {
         if (!ok) continue;
         const joinUrl = await getCandidateJoinUrl(interview.id, candidate.id).catch(() => process.env.APP_URL as string);
         const { subject, html } = oneHourBeforeTemplate(
-          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate',
+          candidate.name, job.title, interview.scheduledStart, joinUrl, 'candidate', undefined, candidate.timezone,
         );
         await sendEmail(candidate.email, subject, html).catch((e: Error) =>
           logger.error(`Failed one_hour_before email to ${candidate.email}: ${e.message}`),
@@ -249,7 +250,7 @@ async function runSweep() {
         const joinUrl = getStaffJoinUrl(interview.id, interviewer.id);
         const { subject, html } = oneHourBeforeTemplate(
           interviewer.name ?? interviewer.email, job.title,
-          interview.scheduledStart, joinUrl, 'staff', candidateNames,
+          interview.scheduledStart, joinUrl, 'staff', candidateNames, interviewer.timezone,
         );
         await sendEmail(interviewer.email, subject, html).catch((e: Error) =>
           logger.error(`Failed one_hour_before email to ${interviewer.email}: ${e.message}`),

@@ -103,6 +103,7 @@ export class AuthService {
           name: dto.name,
           passwordHash,
           role: 'org_admin',
+          ...(dto.timezone ? { timezone: dto.timezone } : {}),
         },
       });
 

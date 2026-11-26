@@ -28,6 +28,7 @@ model User {
   name                  String
   passwordHash          String
   role                  String
+  timezone              String       @default("Asia/Kolkata")
   tokenVersion          Int          @default(0)
   refreshTokenHash      String?
   refreshTokenExpiresAt DateTime?
@@ -179,6 +180,7 @@ model CandidateProfile {
   skills       String[]
   resumeUrl    String?
   resumeHash   String?
+  timezone     String        @default("Asia/Kolkata")
   createdAt    DateTime      @default(now())
   applications Application[]
 

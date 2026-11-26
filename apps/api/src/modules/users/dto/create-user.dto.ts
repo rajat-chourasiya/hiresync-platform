@@ -1,4 +1,5 @@
 import { IsEmail, IsString, IsIn, MinLength, IsOptional } from 'class-validator';
+import { IsTimezone } from '../../../common/helpers/timezone';
 
 export class CreateUserDto {
   @IsEmail()
@@ -15,4 +16,9 @@ export class CreateUserDto {
   @IsString()
   @IsIn(['recruiter', 'interviewer', 'hiring_manager'])
   role!: string;
+
+  @IsString()
+  @IsTimezone()
+  @IsOptional()
+  timezone?: string;
 }

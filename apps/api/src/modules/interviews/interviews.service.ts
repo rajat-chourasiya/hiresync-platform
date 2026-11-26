@@ -76,7 +76,7 @@ async schedule(orgId: string, dto: ScheduleInterviewDto) {
   for (const application of uniqueApplications) {
   const magicLink = await this.generateCandidateMagicLink(interview.id, application.candidateId);
   await this.emailService.sendCandidateInterviewInvite(
-    application.candidate.email, application.candidate.name, job.title, start, magicLink,
+    application.candidate.email, application.candidate.name, job.title, start, magicLink, application.candidate.timezone,
   );
 }
 
@@ -87,7 +87,7 @@ for (const interviewer of interviewers) {
   const questionsLink = await this.generateQuestionsReviewLink(interview.id, interviewer.id, uniqueApplications[0].candidateId);
   const candidateNames = uniqueApplications.map((a) => a.candidate.name).join(', ');
   await this.emailService.sendInterviewerAssignment(
-    interviewer.email, interviewer.name ?? interviewer.email, job.title, candidateNames, start, magicLink, questionsLink,
+    interviewer.email, interviewer.name ?? interviewer.email, job.title, candidateNames, start, magicLink, questionsLink, interviewer.timezone,
   );
 }
 
@@ -328,14 +328,14 @@ async reschedule(orgId: string, interviewId: string, dto: RescheduleInterviewDto
 
   for (const candidate of candidates) {
   const magicLink = await this.generateCandidateMagicLink(interviewId, candidate.id);
-  await this.emailService.sendCandidateReschedule(candidate.email, candidate.name, job?.title ?? '', newStart, magicLink);
+  await this.emailService.sendCandidateReschedule(candidate.email, candidate.name, job?.title ?? '', newStart, magicLink, candidate.timezone);
 }
 for (const interviewer of interviewers) {
   const magicLink = await this.generateInterviewerMagicLink(interviewId, interviewer.id);
   const questionsLink = await this.generateQuestionsReviewLink(interviewId, interviewer.id, interview.candidateIds[0]);
   const candidateNames = candidates.map((c) => c.name).join(', ');
   await this.emailService.sendInterviewerReschedule(
-    interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', candidateNames, newStart, magicLink, questionsLink,
+    interviewer.email, interviewer.name ?? interviewer.email, job?.title ?? '', candidateNames, newStart, magicLink, questionsLink, interviewer.timezone,
   );
   }
 

@@ -1,9 +1,8 @@
+import { formatDateInTimezone } from '../../../common/helpers/timezone';
+
 // ─── Shared helper ────────────────────────────────────────────────────────────
-function formatDate(d: Date): string {
-  return d.toLocaleString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
-  });
+function formatDate(d: Date, timeZone?: string): string {
+  return formatDateInTimezone(d, timeZone);
 }
 
 function baseTemplate(
@@ -30,10 +29,11 @@ export function questionsNotReviewedTemplate(
   candidateName: string,
   interviewStart: Date,
   reviewUrl: string,
+  timeZone?: string,
 ) {
   const body = `
     <p>The interview for <strong>${candidateName}</strong> (<em>${jobTitle}</em>) is scheduled for
-    <strong>${formatDate(interviewStart)}</strong>.</p>
+    <strong>${formatDate(interviewStart, timeZone)}</strong>.</p>
     <p>The AI-generated question set has <strong>not been reviewed yet</strong>. Please review and approve it before the interview begins.</p>
     <a href="${reviewUrl}"
        style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:8px 0">
@@ -54,6 +54,7 @@ export function oneDayBeforeTemplate(
   joinUrl: string,
   recipientType: 'candidate' | 'staff',
   candidateName?: string,
+  timeZone?: string,
 ) {
   const who = recipientType === 'candidate'
     ? `your interview for <strong>${jobTitle}</strong>`
@@ -61,7 +62,7 @@ export function oneDayBeforeTemplate(
 
   const body = `
     <p>This is a reminder that ${who} is <strong>tomorrow</strong>
-    at <strong>${formatDate(interviewStart)}</strong>.</p>
+    at <strong>${formatDate(interviewStart, timeZone)}</strong>.</p>
     <a href="${joinUrl}"
        style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:8px 0">
       ${recipientType === 'candidate' ? 'View Interview Details →' : 'Join Interview →'}
@@ -81,20 +82,23 @@ export function dayOfTemplate(
   joinUrl: string,
   recipientType: 'candidate' | 'staff',
   candidateName?: string,
+  timeZone?: string,
 ) {
   const who = recipientType === 'candidate'
     ? `your interview for <strong>${jobTitle}</strong>`
     : `the interview with <strong>${candidateName}</strong> for <em>${jobTitle}</em>`;
 
+  const formattedTime = formatDate(interviewStart, timeZone);
+
   const body = `
-    <p>${who} is <strong>today</strong> at <strong>${formatDate(interviewStart)}</strong>.</p>
+    <p>${who} is <strong>today</strong> at <strong>${formattedTime}</strong>.</p>
     <a href="${joinUrl}"
        style="display:inline-block;background:#059669;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:8px 0">
       Join Interview →
     </a>`;
 
   return {
-    subject: `[Today] Interview at ${formatDate(interviewStart)} — ${jobTitle}`,
+    subject: `[Today] Interview at ${formattedTime} — ${jobTitle}`,
     html: baseTemplate(recipientName, 'Today', '#059669', 'Your Interview is Today', body),
   };
 }
@@ -107,6 +111,7 @@ export function oneHourBeforeTemplate(
   joinUrl: string,
   recipientType: 'candidate' | 'staff',
   candidateName?: string,
+  timeZone?: string,
 ) {
   const who = recipientType === 'candidate'
     ? `your interview for <strong>${jobTitle}</strong>`
@@ -114,7 +119,7 @@ export function oneHourBeforeTemplate(
 
   const body = `
     <p>${who} starts in <strong>approximately 1 hour</strong>
-    at <strong>${formatDate(interviewStart)}</strong>. Get ready!</p>
+    at <strong>${formatDate(interviewStart, timeZone)}</strong>. Get ready!</p>
     <a href="${joinUrl}"
        style="display:inline-block;background:#7c3aed;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin:8px 0">
       Join Now →
