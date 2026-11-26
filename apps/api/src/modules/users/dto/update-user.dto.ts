@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsIn, MinLength } from 'class-validator';
+import { IsTimezone } from '../../../common/helpers/timezone';
 
 export class UpdateUserDto {
   @IsString()
@@ -9,4 +10,9 @@ export class UpdateUserDto {
   @IsIn(['recruiter', 'interviewer', 'hiring_manager', 'org_admin'])
   @IsOptional()
   role?: string;
+
+  @IsString()
+  @IsTimezone()
+  @IsOptional()
+  timezone?: string;
 }

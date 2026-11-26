@@ -3,6 +3,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateTimezoneDto } from '../../common/dto/update-timezone.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
@@ -12,6 +13,16 @@ import { RequirePermission } from '../../common/decorators/require-permission.de
 @ApiBearerAuth()
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  @Get('me')
+  getMe(@Req() req: any) {
+    return this.usersService.getMe(req.user.sub);
+  }
+
+  @Patch('me/timezone')
+  updateMyTimezone(@Req() req: any, @Body() dto: UpdateTimezoneDto) {
+    return this.usersService.updateMyTimezone(req.user.sub, dto.timezone);
+  }
 
   @Post()
   @RequirePermission('users.create')

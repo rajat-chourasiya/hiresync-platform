@@ -1,7 +1,8 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards, Req } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { CandidateAuthGuard } from '../../common/guards/candidate-auth.guard';
 import { PrismaService } from '../../database/prisma.service';
+import { UpdateTimezoneDto } from '../../common/dto/update-timezone.dto';
 
 @Controller('candidate')
 @UseGuards(CandidateAuthGuard)
@@ -12,6 +13,15 @@ export class CandidatePortalController {
   @Get('me')
   me(@Req() req: any) {
     return this.prisma.candidateProfile.findUnique({ where: { id: req.candidate.candidateId } });
+  }
+
+  @Patch('me/timezone')
+  updateMyTimezone(@Req() req: any, @Body() dto: UpdateTimezoneDto) {
+    return this.prisma.candidateProfile.update({
+      where: { id: req.candidate.candidateId },
+      data: { timezone: dto.timezone },
+      select: { id: true, name: true, email: true, timezone: true },
+    });
   }
 
   @Get('applications')

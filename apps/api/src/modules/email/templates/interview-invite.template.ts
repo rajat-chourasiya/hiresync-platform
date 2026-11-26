@@ -1,8 +1,11 @@
+import { formatDateInTimezone } from '../../../common/helpers/timezone';
+
 export function candidateInterviewInviteTemplate(
   candidateName: string,
   jobTitle: string,
   scheduledStart: Date,
   joinUrl: string,
+  timeZone?: string,
 ) {
   return {
     subject: `You're Shortlisted! Interview Scheduled - ${jobTitle}`,
@@ -11,7 +14,7 @@ export function candidateInterviewInviteTemplate(
         <h2 style="color:#15803D;">Congratulations, you've been shortlisted!</h2>
         <p>Hi ${candidateName},</p>
         <p>Your interview for <strong>${jobTitle}</strong> is scheduled on:</p>
-        <p><strong>${scheduledStart.toUTCString()}</strong></p>
+        <p><strong>${formatDateInTimezone(scheduledStart, timeZone)}</strong></p>
         <p><a href="${joinUrl}" style="background:#1D4ED8;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Join Interview</a></p>
         <p>Best,<br/>HireSync Team</p>
       </div>`,
@@ -20,7 +23,7 @@ export function candidateInterviewInviteTemplate(
 
 export function interviewerAssignmentTemplate(
   interviewerName: string, jobTitle: string, candidateName: string,
-  scheduledStart: Date, joinUrl: string, questionsUrl: string,
+  scheduledStart: Date, joinUrl: string, questionsUrl: string, timeZone?: string,
 ) {
   return {
     subject: `Interview Assigned - ${jobTitle}`,
@@ -29,7 +32,7 @@ export function interviewerAssignmentTemplate(
         <h2 style="color:#7C3AED;">You've been assigned an interview</h2>
         <p>Hi ${interviewerName},</p>
         <p>You are scheduled to interview <strong>${candidateName}</strong> for <strong>${jobTitle}</strong> on:</p>
-        <p><strong>${scheduledStart.toUTCString()}</strong></p>
+        <p><strong>${formatDateInTimezone(scheduledStart, timeZone)}</strong></p>
         <p><a href="${questionsUrl}" style="background:#D97706;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Review Questions</a></p>
         <p><a href="${joinUrl}" style="background:#1D4ED8;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">Join Interview</a></p>
         <p>Best,<br/>HireSync Team</p>
