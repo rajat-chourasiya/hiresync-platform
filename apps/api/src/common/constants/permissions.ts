@@ -1,10 +1,11 @@
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  org_admin: ['*'], 
+  org_admin: ['*'],
   recruiter: [
     'jobs.create', 'jobs.publish', 'jobs.view',
     'applications.view', 'applications.review',
     'interviews.schedule', 'interviews.view_all',
     'users.create', 'users.update',
+    'roles.manage',
   ],
   interviewer: [
     'interviews.view_own', 'interviews.join_own',
