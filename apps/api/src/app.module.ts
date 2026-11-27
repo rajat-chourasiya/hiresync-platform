@@ -24,6 +24,7 @@ import './modules/queue/ai-analysis.worker';
 import { BillingModule } from './modules/billing/billing.module';
 import { QuestionsModule } from './modules/questions/questions.module';
 import { ComparisonModule } from './modules/comparison/comparison.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ComparisonModule } from './modules/comparison/comparison.module';
     BillingModule,
     QuestionsModule,
     ComparisonModule,
+    RolesModule,
     ThrottlerModule.forRoot([{
       ttl: Number(process.env.THROTTLE_TTL) * 1000,
       limit: Number(process.env.THROTTLE_LIMIT),
