@@ -44,11 +44,14 @@ model User {
 
 model Role {
   id          String           @id @default(uuid())
-  name        String           @unique
+  orgId       String?          // null = system role (built-in); non-null = custom org role
+  name        String
   createdAt   DateTime         @default(now())
   permissions RolePermission[]
   users       UserRole[]
 
+  @@unique([orgId, name])
+  @@index([orgId])
   @@map("roles")
 }
 
